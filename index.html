@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Trainingslog</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Training">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eceff2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1317" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Phone-first single column; sticky session bar, superset groups, fixed save bar. Colors borrow from bumper plates. */
+:root{
+  --bg:#eceff2; --surface:#ffffff; --ink:#151a1f; --muted:#5c6772; --line:#d3d9df;
+  --accent:#1f47c7; --accent-ink:#ffffff; --accent-soft:#e3e9fb;
+  --plate-yellow:#8a6500; --plate-yellow-soft:#fbf1d2;
+  --ok:#1d7a46; --ok-soft:#ddf1e5; --warn:#a33a12; --warn-soft:#fbe5dc;
+  --input:#f6f8f9;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0f1317; --surface:#181d22; --ink:#e6ebef; --muted:#97a3ad; --line:#2b333a;
+  --accent:#7d97ff; --accent-ink:#0b1020; --accent-soft:#1d2645;
+  --plate-yellow:#f0c75a; --plate-yellow-soft:#3a3016;
+  --ok:#6fd39b; --ok-soft:#163324; --warn:#ff9a72; --warn-soft:#3d2219;
+  --input:#11161a; color-scheme:dark}}
+
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+.wrap{max-width:640px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 130px}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.01em;text-wrap:balance;margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:10px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
+.title-row h1{font-size:clamp(24px,7.5vw,30px);line-height:1;text-transform:uppercase;min-width:0}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px}
+.tabs button{border:0;background:transparent;padding:5px 12px;border-radius:6px;font-weight:500;font-size:14px;color:var(--muted)}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+.session{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.session input[type=date]{font:inherit;font-size:16px;font-family:var(--f-num);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-height:40px;-webkit-appearance:none;appearance:none}
+.wk{display:flex;gap:6px}
+.wk button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 14px;min-height:40px;font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:.03em}
+.wk button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.summary{font-size:13px;color:var(--muted)}
+.summary b{color:var(--ink);font-weight:600}
+.syncline{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+.syncline .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;vertical-align:1px}
+.syncline .dot.wait{background:var(--plate-yellow)}
+.syncline .dot.err{background:var(--warn)}
+.syncline button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:500;color:var(--ink)}
+.syncline button:disabled{opacity:.5}
+
+.banner{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px;display:grid;gap:8px}
+.banner.err{background:var(--warn-soft);color:var(--warn)}
+.banner.info{background:var(--accent-soft);color:var(--ink)}
+.banner.ok{background:var(--ok-soft);color:var(--ok)}
+.banner button{justify-self:start;border:1px solid currentColor;background:transparent;border-radius:8px;padding:6px 12px;font-weight:500}
+
+.focus{margin:18px 0 4px;color:var(--muted);font-size:14px}
+.group{margin-top:18px;display:grid;gap:10px}
+.group-label{font-family:var(--f-display);font-size:15px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card-head > div{min-width:0}
+.card h3{font-size:22px;line-height:1.1}
+.meta{font-size:13px;color:var(--muted)}
+.chip{flex:none;font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;border:1px solid var(--line);color:var(--muted)}
+.chip.saved{background:var(--ok-soft);color:var(--ok);border-color:transparent}
+.chip.changed{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.chip.wait{background:var(--plate-yellow-soft);color:var(--plate-yellow);border-color:transparent}
+.last{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted);flex-wrap:wrap}
+.last .num{color:var(--ink)}
+.spark{flex:none}
+.hint{font-size:13px;padding:6px 10px;border-radius:8px;background:var(--plate-yellow-soft);color:var(--plate-yellow);font-weight:500}
+.sets{display:grid;gap:6px}
+.set{display:grid;grid-template-columns:52px 1fr 14px 1fr;align-items:center;gap:8px}
+.set label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.set .x{color:var(--muted);text-align:center}
+.field{position:relative;min-width:0}
+.field input{width:100%;box-sizing:border-box;font-family:var(--f-num);font-size:18px;font-variant-numeric:tabular-nums;background:var(--input);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 38px 9px 10px;min-height:46px;-webkit-appearance:none;appearance:none}
+.field input::placeholder{color:var(--muted);opacity:.55}
+.field span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
+.copy{justify-self:start;border:0;background:transparent;color:var(--accent);font-size:13px;font-weight:500;padding:2px 0}
+
+.empty{margin-top:28px;padding:20px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
+
+.history{margin-top:16px;display:grid;gap:8px}
+.hist{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px}
+.hist-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.hist-top strong{font-family:var(--f-display);font-size:19px;font-weight:600}
+.hist ul{margin:4px 0 0;padding:0;list-style:none;display:grid;gap:2px;font-size:13px;color:var(--muted)}
+.hist li{display:flex;justify-content:space-between;gap:10px}
+.hist li span:first-child{min-width:0;overflow-wrap:anywhere}
+
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bg);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.savebar-in{max-width:640px;margin:0 auto;display:flex;gap:12px;align-items:center}
+.savebar .status{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+.save{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:12px 18px;font-family:var(--f-display);font-size:19px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;min-height:48px}
+.save:disabled{opacity:.45;cursor:default}
+.footer{margin-top:22px;font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.linkbtn{border:0;background:transparent;color:var(--accent);padding:0;font-size:inherit;font-weight:500}
+
+/* Setup */
+.setup{max-width:520px;margin:0 auto;padding-top:calc(env(safe-area-inset-top,0px) + 28px);padding-bottom:40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+.setup h1{font-size:34px;text-transform:uppercase;line-height:1}
+.setup p{margin:0;color:var(--muted)}
+.setup label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:-8px}
+.setup input{width:100%;box-sizing:border-box;font-family:var(--f-num);font-size:16px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:46px;-webkit-appearance:none;appearance:none}
+.setup .actions{display:flex;gap:16px;align-items:center}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
+</style>
+</head>
+<body>
+
+<section class="setup" id="setup" hidden>
+  <h1>Trainingslog</h1>
+  <p>Verbinde die App mit deinem Google Sheet. Web-App-URL und Schlüssel bekommst du aus dem Apps Script (Anleitung, Schritte 1 und 2).</p>
+  <label for="cfgUrl">Web-App-URL</label>
+  <input id="cfgUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <label for="cfgKey">Schlüssel</label>
+  <input id="cfgKey" type="text" placeholder="40 Zeichen aus setupKey()" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+  <div class="actions">
+    <button class="save" id="cfgSave">Verbinden</button>
+    <button class="linkbtn" id="cfgCancel" hidden>Abbrechen</button>
+  </div>
+  <div id="cfgMsg"></div>
+</section>
+
+<div id="app" hidden>
+  <div class="wrap">
+    <header class="bar">
+      <div class="title-row">
+        <h1>Trainingslog</h1>
+        <div class="tabs" role="tablist">
+          <button id="tab-entry" role="tab" aria-selected="true">Eintragen</button>
+          <button id="tab-hist" role="tab" aria-selected="false">Verlauf</button>
+        </div>
+      </div>
+      <div class="session" id="sessionRow">
+        <input type="date" id="date" aria-label="Datum">
+        <div class="wk" id="wk"></div>
+      </div>
+      <div class="summary" id="summary"></div>
+      <div class="syncline"><span id="syncText"></span><button id="syncBtn">Aktualisieren</button></div>
+    </header>
+
+    <div id="banner"></div>
+    <main id="entry"><div class="empty">Lade dein Google Sheet …</div></main>
+    <section id="hist" hidden></section>
+    <div class="footer"><button class="linkbtn" id="openSettings">Verbindung ändern</button></div>
+  </div>
+
+  <div class="savebar" id="savebar">
+    <div class="savebar-in">
+      <div class="status" id="saveStatus">Noch nichts eingetragen</div>
+      <button class="save" id="saveBtn" disabled>Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LS = {
+  get(k, d){ try{ const s = localStorage.getItem(k); return s == null ? d : JSON.parse(s); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+
+let cfg = LS.get("cfg", null);          // {url, key}
+let outbox = LS.get("outbox", []);      // gespeicherte, noch nicht übertragene Einheiten
+let lastSync = LS.get("lastSync", null);
+let log = [];                           // {date, workout, ex, sets, pending?}
+let plan = {}, workouts = [];
+let state = { date: todayISO(), dateAuto: true, workout: null, entries: {} };
+let syncing = false, syncError = null;
+
+/* ---------- Helfer ---------- */
+function todayISO(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function num(v){ if(v===null||v===undefined) return null; if(typeof v==="number") return v; const s=String(v).trim().replace(/\s/g,"").replace(",","."); if(s==="") return null; const n=Number(s); return isFinite(n)?n:null; }
+function fmt(n){ return n===null||n===undefined ? "" : String(n).replace(".",","); }
+function isoToDE(iso){ const [y,m,d]=iso.split("-"); return d+"."+m+"."+y; }
+function shortDE(iso){ const [,m,d]=iso.split("-"); return d+"."+m+"."; }
+function repUpper(r){ const n=String(r||"").match(/\d+/g); return n? Number(n[n.length-1]) : null; }
+function volume(sets){ return sets.reduce((a,[w,r])=> a + ((w??0)*(r??0)), 0); }
+function hasAny(sets){ return sets && sets.some(([w,r])=> w!==null || r!==null); }
+function sameSets(a,b){ for(let i=0;i<3;i++){ if((a[i][0]??null)!==(b[i][0]??null) || (a[i][1]??null)!==(b[i][1]??null)) return false; } return true; }
+function emptySets(){ return [[null,null],[null,null],[null,null]]; }
+function normSets(s){ const out=[0,1,2].map(i=>[num(s&&s[i]&&s[i][0]), num(s&&s[i]&&s[i][1])]); return out; }
+function fmtKg(n){ return Math.round(n).toLocaleString("de-DE"); }
+function timeDE(ts){ const d=new Date(ts); const today=todayISO(); const iso=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); const t=d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); return iso===today? "heute "+t : shortDE(iso)+" "+t; }
+function draftKey(){ return "draft:"+state.date+":"+state.workout; }
+function saveDraft(){ LS.set(draftKey(), state.entries); }
+function loadDraft(){ return LS.get(draftKey(), null); }
+function clearDraft(){ LS.del(draftKey()); }
+
+/* ---------- Schnittstelle zum Apps Script ---------- */
+class ApiError extends Error{ constructor(code, msg){ super(msg||code); this.code=code; } }
+async function api(action, payload, conf){
+  const c = conf || cfg;
+  if(!c) throw new ApiError("no_config");
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 30000);
+  try{
+    let res;
+    try{
+      if(action === "load"){
+        const sep = c.url.includes("?") ? "&" : "?";
+        res = await fetch(c.url + sep + "action=load&key=" + encodeURIComponent(c.key) + "&t=" + Date.now(), {signal: ctrl.signal, cache: "no-store"});
+      }else{
+        // text/plain vermeidet die CORS-Vorabfrage, die Apps Script nicht beantwortet
+        res = await fetch(c.url, {method:"POST", signal: ctrl.signal, headers:{"Content-Type":"text/plain;charset=utf-8"}, body: JSON.stringify(Object.assign({action, key:c.key}, payload||{}))});
+      }
+    }catch(e){ throw new ApiError(navigator.onLine === false ? "offline" : "network"); }
+    let data;
+    try{ data = await res.json(); }catch(e){ throw new ApiError("bad_response"); }
+    if(!data || !data.ok) throw new ApiError((data && data.error) || "server", data && data.message);
+    return data;
+  }finally{ clearTimeout(timer); }
+}
+function isTransient(e){ return e && (e.code==="offline" || e.code==="network"); }
+function errMsg(e){
+  switch(e && e.code){
+    case "offline": return "Du bist offline. Gespeicherte Einträge werden übertragen, sobald wieder Netz da ist.";
+    case "network": return "Google ist gerade nicht erreichbar. Deine Einträge bleiben auf dem iPhone und werden später übertragen. Wenn das dauerhaft so ist: Steht die Bereitstellung im Apps Script auf „Zugriff: Jeder“?";
+    case "unauthorized": return "Der Schlüssel passt nicht zum Apps Script. Tippe unten auf „Verbindung ändern“ und trag ihn neu ein.";
+    case "no_key": return "Im Apps Script fehlt noch der Schlüssel. Führe dort einmal die Funktion setupKey aus.";
+    case "bad_response": return "Unter dieser URL antwortet kein Trainingslog-Script. Es muss die Web-App-URL der Bereitstellung sein, die auf /exec endet.";
+    case "bad_request": return "Das Sheet hat einen Eintrag abgelehnt: " + (e.message || "ungültige Daten") + ".";
+    default: return "Fehler im Apps Script: " + ((e && e.message) || "unbekannt") + ".";
+  }
+}
+
+/* ---------- Daten ---------- */
+function parsePlan(vals){
+  plan = {};
+  let cur = null;
+  for(const r of vals || []){
+    const a = String(r[0]||"").trim(), b = String(r[1]||"").trim();
+    const head = a.match(/^(Workout\s+\S+)\s*:\s*(.*)$/i);
+    if(head && !b){ cur = head[1]; plan[cur] = {focus: head[2], exercises: []}; continue; }
+    if(!cur || !b || b === "Übung") continue;
+    plan[cur].exercises.push({name: b, device: String(r[2]||"").trim(), reps: String(r[3]||"").trim(), ss: a});
+  }
+}
+function applyJob(job){
+  for(const en of job.entries){
+    const hit = log.find(l => l.date===job.date && l.workout===job.workout && l.ex===en.ex);
+    if(hit){ hit.sets = normSets(en.sets); hit.pending = true; }
+    else log.push({date: job.date, workout: job.workout, ex: en.ex, sets: normSets(en.sets), pending: true});
+  }
+}
+function ingest(data){
+  parsePlan(data.plan);
+  log = (data.log || []).map(l => ({date: l.date, workout: String(l.workout||""), ex: String(l.ex||""), sets: normSets(l.sets)}));
+  outbox.forEach(applyJob);
+  log.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0); // stabil: Reihenfolge innerhalb eines Tages bleibt
+  const fromLog = [...new Set(log.map(l=>l.workout).filter(Boolean))];
+  workouts = [...new Set([...Object.keys(plan), ...fromLog])].sort();
+  for(const w of workouts){
+    if(!plan[w]) plan[w] = {focus: "", exercises: [...new Set(log.filter(l=>l.workout===w).map(l=>l.ex))].map(n=>({name:n, device:"", reps:"", ss:""}))};
+  }
+}
+function pickWorkout(){
+  const today = log.filter(l=>l.date===state.date);
+  if(today.length) return today[today.length-1].workout;
+  const past = log.filter(l=>l.date<state.date);
+  if(!past.length) return workouts[0] || null;
+  const i = workouts.indexOf(past[past.length-1].workout);
+  return workouts[(i+1) % workouts.length] || workouts[0];
+}
+function existingRow(ex){ return log.find(l=>l.date===state.date && l.workout===state.workout && l.ex===ex) || null; }
+function lastSession(ex){ const prev = log.filter(l=>l.ex===ex && l.date<state.date && hasAny(l.sets)); return prev.length ? prev[prev.length-1] : null; }
+function history(ex){ const m = new Map(); for(const l of log){ if(l.ex===ex && l.date<=state.date && hasAny(l.sets)) m.set(l.date, l); } return [...m.values()].slice(-12); }
+
+/* ---------- Synchronisierung ---------- */
+async function flush(){
+  while(outbox.length){
+    const job = outbox[0];
+    try{
+      await api("save", {date: job.date, workout: job.workout, entries: job.entries});
+    }catch(e){
+      if(e.code === "bad_request"){ outbox.shift(); LS.set("outbox", outbox); showBanner("err", errMsg(e)); continue; }
+      throw e;
+    }
+    outbox.shift();
+    LS.set("outbox", outbox);
+  }
+}
+async function sync(){
+  if(syncing || !cfg) return;
+  syncing = true; renderSync();
+  try{
+    await flush();
+    const data = await api("load");
+    LS.set("cache", {log: data.log, plan: data.plan});
+    ingest(data);
+    lastSync = Date.now(); LS.set("lastSync", lastSync);
+    syncError = null;
+    if(!state.workout || !workouts.includes(state.workout)) state.workout = pickWorkout();
+    renderWorkoutButtons();
+    const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#entry");
+    if(typing) refreshStatus(); else selectSession();
+    if(!$("hist").hidden) renderHistory();
+    if($("banner").dataset.kind === "err") clearBanner();
+  }catch(e){
+    syncError = e;
+    if(!isTransient(e) || !log.length) showBanner("err", errMsg(e), "Erneut versuchen", sync);
+    if(!log.length && !Object.keys(plan).length) $("entry").innerHTML = `<div class="empty">Noch keine Daten. Sobald die Verbindung steht, erscheinen hier deine Übungen.</div>`;
+  }finally{
+    syncing = false; renderSync();
+  }
+}
+
+/* ---------- Anzeige ---------- */
+function showBanner(kind, msg, btnLabel, onClick){
+  const b = $("banner");
+  b.dataset.kind = kind;
+  b.innerHTML = `<div class="banner ${kind}"><div>${esc(msg)}</div>${btnLabel?`<button id="bannerBtn">${esc(btnLabel)}</button>`:""}</div>`;
+  if(btnLabel) $("bannerBtn").onclick = onClick;
+}
+function clearBanner(){ $("banner").innerHTML = ""; delete $("banner").dataset.kind; }
+
+function renderSync(){
+  const n = outbox.length;
+  let dot = "", text = "";
+  if(syncing){ dot = "wait"; text = n ? "Überträgt …" : "Synchronisiert …"; }
+  else if(n){ dot = "wait"; text = (n===1 ? "1 Einheit wartet" : n+" Einheiten warten") + " auf Übertragung"; }
+  else if(syncError){ dot = "err"; text = isTransient(syncError) ? "Offline" + (lastSync ? " · Stand "+timeDE(lastSync) : "") : "Verbindungsfehler"; }
+  else if(lastSync){ text = "Synchron · "+timeDE(lastSync); }
+  $("syncText").innerHTML = text ? `<span class="dot ${dot}"></span>${esc(text)}` : "";
+  $("syncBtn").disabled = syncing;
+}
+
+function renderWorkoutButtons(){
+  $("wk").innerHTML = workouts.map(w=>`<button aria-pressed="${w===state.workout}" data-w="${esc(w)}">${esc(w.replace(/^Workout\s+/i,""))}</button>`).join("");
+  $("wk").querySelectorAll("button").forEach(b => b.onclick = () => { state.workout = b.dataset.w; renderWorkoutButtons(); selectSession(); });
+}
+
+function selectSession(){
+  const exs = (plan[state.workout] || {exercises: []}).exercises;
+  const draft = loadDraft();
+  state.entries = {};
+  for(const e of exs){
+    const ex = existingRow(e.name);
+    state.entries[e.name] = (draft && draft[e.name]) ? normSets(draft[e.name]) : (ex ? ex.sets.map(s=>[...s]) : emptySets());
+  }
+  renderEntry();
+}
+
+function sparkSVG(hist){
+  const pts = hist.map(h => Math.max(...h.sets.map(s=>s[0]??0)));
+  if(pts.length < 2) return "";
+  const W=96, H=28, p=3, min=Math.min(...pts), max=Math.max(...pts), span=(max-min)||1;
+  const xy = pts.map((v,i)=>[p+i*(W-2*p)/(pts.length-1), H-p-(v-min)*(H-2*p)/span]);
+  const line = xy.map(q=>q.map(n=>n.toFixed(1)).join(",")).join(" ");
+  const [lx,ly] = xy[xy.length-1];
+  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Schwerster Satz der letzten ${pts.length} Einheiten">
+    <polygon points="${p},${H-p} ${line} ${W-p},${H-p}" fill="var(--accent-soft)"/>
+    <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.6" fill="var(--accent)"/></svg>`;
+}
+
+function renderEntry(){
+  const cfgW = plan[state.workout] || {focus:"", exercises:[]};
+  let html = cfgW.focus ? `<p class="focus">${esc(state.workout)}: ${esc(cfgW.focus)}</p>` : "";
+  if(!cfgW.exercises.length) html += `<div class="empty">Für dieses Workout sind im Trainingsplan keine Übungen hinterlegt.</div>`;
+  const groups = []; let g = null;
+  cfgW.exercises.forEach((e,i) => { if(e.ss || !g){ g = {label: e.ss, items: []}; groups.push(g); } g.items.push({...e, idx: i}); });
+  for(const grp of groups){
+    html += `<div class="group">${grp.label ? `<div class="group-label">${esc(grp.label.replace(/^SS\s*/i,"Supersatz "))}</div>` : ""}`;
+    for(const e of grp.items){
+      const last = lastSession(e.name);
+      const up = repUpper(e.reps);
+      const topped = last && up && last.sets.every(s => s[1]!==null && s[1]>=up);
+      const lastTxt = last ? last.sets.filter(s=>s[0]!==null).map(s=>`${fmt(s[0])}×${s[1]??"–"}`).join(" · ") : "";
+      const sets = state.entries[e.name];
+      html += `<article class="card">
+        <div class="card-head"><div><h3>${esc(e.name)}</h3><div class="meta">${[e.device, e.reps ? e.reps+" Wdh." : ""].filter(Boolean).map(esc).join(" · ")}</div></div><span class="chip" id="chip-${e.idx}"></span></div>
+        ${last ? `<div class="last"><span>Zuletzt ${shortDE(last.date)}: <span class="num">${lastTxt}</span></span>${sparkSVG(history(e.name))}</div>` : `<div class="last">Noch keine früheren Einträge</div>`}
+        ${topped ? `<div class="hint">Letztes Mal alle Sätze ≥ ${up} Wdh. Zeit, das Gewicht zu erhöhen.</div>` : ""}
+        <div class="sets">
+          ${[0,1,2].map(s => `<div class="set"><label for="w-${e.idx}-${s}">Satz ${s+1}</label>
+            <div class="field"><input id="w-${e.idx}-${s}" inputmode="decimal" autocomplete="off" placeholder="${last ? fmt(last.sets[s][0]) : ""}" value="${fmt(sets[s][0])}" data-ex="${e.idx}" data-s="${s}" data-k="0"><span>kg</span></div>
+            <span class="x">×</span>
+            <div class="field"><input id="r-${e.idx}-${s}" inputmode="numeric" autocomplete="off" placeholder="${last ? (last.sets[s][1]??"") : ""}" value="${sets[s][1]??""}" data-ex="${e.idx}" data-s="${s}" data-k="1" aria-label="Satz ${s+1} Wiederholungen"><span>Wdh</span></div></div>`).join("")}
+        </div>
+        ${last ? `<button class="copy" data-copy="${e.idx}">Gewichte von ${shortDE(last.date)} übernehmen</button>` : ""}
+      </article>`;
+    }
+    html += `</div>`;
+  }
+  $("entry").innerHTML = html;
+  $("entry").querySelectorAll("input").forEach(inp => inp.addEventListener("input", onInput));
+  $("entry").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
+    const idx = b.dataset.copy, e = cfgW.exercises[Number(idx)], last = lastSession(e.name), sets = state.entries[e.name];
+    for(let s=0; s<3; s++){ if(sets[s][0]===null){ sets[s][0] = last.sets[s][0]; $(`w-${idx}-${s}`).value = fmt(last.sets[s][0]); } }
+    saveDraft(); refreshStatus();
+  });
+  refreshStatus();
+}
+
+function onInput(ev){
+  const t = ev.target, e = plan[state.workout].exercises[Number(t.dataset.ex)];
+  const n = num(t.value);
+  state.entries[e.name][Number(t.dataset.s)][Number(t.dataset.k)] = Number(t.dataset.k)===0 ? n : (n===null ? null : Math.round(n));
+  saveDraft(); refreshStatus();
+}
+
+function pending(){
+  const out = [];
+  for(const e of (plan[state.workout] || {exercises: []}).exercises){
+    const sets = state.entries[e.name]; const ex = existingRow(e.name);
+    if(ex ? !sameSets(ex.sets, sets) : hasAny(sets)) out.push({e, sets, isNew: !ex});
+  }
+  return out;
+}
+
+function refreshStatus(){
+  const exs = (plan[state.workout] || {exercises: []}).exercises;
+  let vol = 0, done = 0;
+  exs.forEach((e,i) => {
+    const sets = state.entries[e.name], ex = existingRow(e.name), chip = $("chip-"+i);
+    if(!sets) return;
+    vol += volume(sets); if(hasAny(sets)) done++;
+    if(!chip) return;
+    if(ex && sameSets(ex.sets, sets) && !hasAny(sets) && !ex.pending){ chip.className = "chip"; chip.textContent = "Offen"; }
+    else if(ex && sameSets(ex.sets, sets)){ chip.className = ex.pending ? "chip wait" : "chip saved"; chip.textContent = ex.pending ? "Wartet" : "Im Sheet"; }
+    else if(ex){ chip.className = "chip changed"; chip.textContent = "Geändert"; }
+    else if(hasAny(sets)){ chip.className = "chip changed"; chip.textContent = "Neu"; }
+    else { chip.className = "chip"; chip.textContent = "Offen"; }
+  });
+  const prev = log.filter(l => l.workout===state.workout && l.date<state.date && hasAny(l.sets));
+  const prevDate = prev.length ? prev[prev.length-1].date : null;
+  const prevVol = prevDate ? log.filter(l => l.workout===state.workout && l.date===prevDate).reduce((a,l)=>a+volume(l.sets),0) : 0;
+  $("summary").innerHTML = exs.length ? `${done}/${exs.length} Übungen · Volumen <b class="num">${fmtKg(vol)} kg</b>` + (prevDate ? ` · zuletzt ${shortDE(prevDate)}: <span class="num">${fmtKg(prevVol)} kg</span>` : "") : "";
+  const p = pending();
+  $("saveBtn").disabled = p.length === 0;
+  const nNew = p.filter(x=>x.isNew).length, nChg = p.length - nNew;
+  $("saveStatus").textContent = p.length === 0 ? (done ? "Alles gespeichert" : "Noch nichts eingetragen")
+    : [nNew ? `${nNew} neu` : "", nChg ? `${nChg} geändert` : ""].filter(Boolean).join(", ") + ` · ${isoToDE(state.date)}`;
+}
+
+function save(){
+  const p = pending();
+  if(!p.length) return;
+  const job = {id: Date.now().toString(36), date: state.date, workout: state.workout, entries: p.map(x => ({ex: x.e.name, sets: x.sets.map(s=>[...s])}))};
+  outbox.push(job); LS.set("outbox", outbox);
+  applyJob(job);
+  clearDraft();
+  renderEntry();
+  showBanner("ok", `Gespeichert: ${p.length} ${p.length===1 ? "Übung" : "Übungen"} für ${isoToDE(state.date)}.`);
+  setTimeout(() => { if($("banner").dataset.kind === "ok") clearBanner(); }, 4000);
+  sync();
+}
+
+function renderHistory(){
+  const sessions = new Map();
+  for(const l of log){ if(!hasAny(l.sets)) continue; const k = l.date+"|"+l.workout; if(!sessions.has(k)) sessions.set(k, {date:l.date, workout:l.workout, items:[]}); sessions.get(k).items.push(l); }
+  const list = [...sessions.values()].sort((a,b) => a.date < b.date ? 1 : -1).slice(0, 30);
+  $("hist").innerHTML = list.length ? `<div class="history">${list.map(s => `
+    <div class="hist"><div class="hist-top"><strong>${isoToDE(s.date)} · ${esc(s.workout)}</strong><span class="num meta">${fmtKg(s.items.reduce((a,l)=>a+volume(l.sets),0))} kg</span></div>
+    <ul>${s.items.map(l => `<li><span>${esc(l.ex)}${l.pending ? " ·  wartet" : ""}</span><span class="num">${l.sets.filter(x=>x[0]!==null).map(x=>`${fmt(x[0])}×${x[1]??"–"}`).join(" ")}</span></li>`).join("")}</ul></div>`).join("")}</div>`
+    : `<div class="empty">Noch keine Einträge.</div>`;
+}
+function setTab(t){
+  const entry = t === "entry";
+  $("tab-entry").setAttribute("aria-selected", entry); $("tab-hist").setAttribute("aria-selected", !entry);
+  $("entry").hidden = !entry; $("hist").hidden = entry; $("savebar").hidden = !entry; $("sessionRow").hidden = !entry; $("summary").hidden = !entry;
+  if(!entry) renderHistory();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Einrichtung ---------- */
+function showSetup(){
+  $("app").hidden = true; $("setup").hidden = false;
+  $("cfgUrl").value = cfg ? cfg.url : ""; $("cfgKey").value = cfg ? cfg.key : "";
+  $("cfgCancel").hidden = !cfg; $("cfgMsg").innerHTML = "";
+}
+function showApp(){ $("setup").hidden = true; $("app").hidden = false; }
+async function saveCfg(){
+  const url = $("cfgUrl").value.trim(), key = $("cfgKey").value.trim();
+  const msg = (kind, text) => $("cfgMsg").innerHTML = `<div class="banner ${kind}"><div>${esc(text)}</div></div>`;
+  if(!/^https:\/\/script\.google\.com\/(a\/[^/]+\/)?macros\/s\/[^/?#]+\/exec\/?$/.test(url)){ msg("err", "Die URL muss mit https://script.google.com/macros/s/ beginnen und auf /exec enden."); return; }
+  if(key.length < 16){ msg("err", "Bitte den Schlüssel aus setupKey() einfügen."); return; }
+  const next = {url: url.replace(/\/$/, ""), key};
+  $("cfgSave").disabled = true; msg("info", "Teste die Verbindung …");
+  try{
+    const data = await api("load", null, next);
+    cfg = next; LS.set("cfg", cfg);
+    LS.set("cache", {log: data.log, plan: data.plan});
+    ingest(data);
+    lastSync = Date.now(); LS.set("lastSync", lastSync); syncError = null;
+    state.workout = pickWorkout();
+    showApp(); renderWorkoutButtons(); selectSession(); renderSync(); clearBanner();
+    if(outbox.length) sync();
+  }catch(e){
+    msg("err", errMsg(e));
+  }finally{
+    $("cfgSave").disabled = false;
+  }
+}
+
+/* ---------- Start ---------- */
+function boot(){
+  $("date").value = state.date;
+  $("date").onchange = () => { if(!$("date").value) return; state.date = $("date").value; state.dateAuto = state.date === todayISO(); state.workout = pickWorkout(); renderWorkoutButtons(); selectSession(); };
+  $("saveBtn").onclick = save;
+  $("syncBtn").onclick = sync;
+  $("tab-entry").onclick = () => setTab("entry");
+  $("tab-hist").onclick = () => setTab("hist");
+  $("openSettings").onclick = showSetup;
+  $("cfgSave").onclick = saveCfg;
+  $("cfgCancel").onclick = showApp;
+  window.addEventListener("online", sync);
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState !== "visible" || !cfg) return;
+    if(state.dateAuto && state.date !== todayISO()){
+      state.date = todayISO(); $("date").value = state.date; state.workout = pickWorkout(); renderWorkoutButtons(); selectSession();
+    }
+    if(outbox.length || !lastSync || Date.now() - lastSync > 60000) sync();
+  });
+
+  if(!cfg){ showSetup(); return; }
+  showApp();
+  const cache = LS.get("cache", null);
+  if(cache){
+    ingest(cache);
+    state.workout = pickWorkout();
+    renderWorkoutButtons(); selectSession();
+  }
+  renderSync();
+  sync();
+}
+boot();
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
+</script>
+</body>
+</html>
