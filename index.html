@@ -97,7 +97,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .field input::placeholder{color:var(--muted);opacity:.55}
 .field span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
 .field select{width:100%;box-sizing:border-box;font-family:var(--f-num);font-size:18px;font-variant-numeric:tabular-nums;background:var(--input);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 38px 9px 10px;min-height:46px;-webkit-appearance:none;appearance:none}
-.field select:invalid{color:var(--muted)}
+.field select:invalid,.field select.sugg{color:var(--muted)}
 .field select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* Statistik */
@@ -397,6 +397,7 @@ function selectSession(){
   const exs = (plan[state.workout] || {exercises: []}).exercises;
   const draft = loadDraft();
   state.entries = {};
+  cleared = new Set();
   for(const e of exs){
     const ex = existingRow(e.name);
     state.entries[e.name] = (draft && draft[e.name]) ? normSets(draft[e.name]) : (ex ? ex.sets.map(s=>[...s]) : emptySets());
@@ -419,7 +420,7 @@ function sparkSVG(hist){
 
 function renderEntry(){
   const cfgW = plan[state.workout] || {focus:"", exercises:[]};
-  let html = cfgW.focus ? `<p class="focus">${esc(state.workout)}: ${esc(cfgW.focus)}</p>` : "";
+  let html = (cfgW.focus ? `<p class="focus">${esc(state.workout)}: ${esc(cfgW.focus)}</p>` : "") + (cfgW.exercises.length ? `<p class="focus" style="margin-top:4px;font-size:13px">Graue Werte sind vom letzten Mal. Rad antippen und schließen übernimmt sie.</p>` : "");
   if(!cfgW.exercises.length) html += `<div class="empty">Für dieses Workout sind im Trainingsplan keine Übungen hinterlegt.</div>`;
   const groups = []; let g = null;
   cfgW.exercises.forEach((e,i) => { if(e.ss || !g){ g = {label: e.ss, items: []}; groups.push(g); } g.items.push({...e, idx: i}); });
@@ -438,9 +439,9 @@ function renderEntry(){
         ${topped ? `<div class="hint">Letztes Mal alle Sätze ≥ ${up} Wdh. Zeit, das Gewicht zu erhöhen.</div>` : ""}
         <div class="sets">
           ${[0,1,2].map(s => `<div class="set"><label for="w-${e.idx}-${s}">Satz ${s+1}</label>
-            <div class="field"><select id="w-${e.idx}-${s}" required data-ex="${e.idx}" data-s="${s}" data-k="0">${optionsHTML(wVals, sets[s][0], suggestWeight(e.name, s, last, sets), fmt)}</select><span>kg</span></div>
+            <div class="field">${pickerHTML(`w-${e.idx}-${s}`, e, s, 0, wVals, suggestWeight(e.name, s, last, sets), fmt, "")}<span>kg</span></div>
             <span class="x">×</span>
-            <div class="field"><select id="r-${e.idx}-${s}" required data-ex="${e.idx}" data-s="${s}" data-k="1" aria-label="Satz ${s+1} Wiederholungen">${optionsHTML(REPS, sets[s][1], suggestReps(e, s, last), String)}</select><span>Wdh</span></div></div>`).join("")}
+            <div class="field">${pickerHTML(`r-${e.idx}-${s}`, e, s, 1, REPS, suggestReps(e, s, last), String, ` aria-label="Satz ${s+1} Wiederholungen"`)}<span>Wdh</span></div></div>`).join("")}
         </div>
         ${last ? `<button class="copy" data-copy="${e.idx}">Werte vom ${shortDE(last.date)} übernehmen</button>` : ""}
       </article>`;
@@ -448,7 +449,7 @@ function renderEntry(){
     html += `</div>`;
   }
   $("entry").innerHTML = html;
-  $("entry").querySelectorAll("select").forEach(sel => sel.addEventListener("change", onPick));
+  $("entry").querySelectorAll("select").forEach(sel => { sel.addEventListener("change", onPick); sel.addEventListener("blur", onPickClose); });
   $("entry").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
     const idx = b.dataset.copy, e = cfgW.exercises[Number(idx)], last = lastSession(e.name), sets = state.entries[e.name];
     for(let s=0; s<3; s++){
@@ -480,32 +481,46 @@ function suggestReps(e, s, last){
   if(last && last.sets[s][1]!==null) return last.sets[s][1];
   const m = String(e.reps||"").match(/\d+/); return m ? Number(m[0]) : 10;
 }
-// Das leere „–“ steht direkt vor dem Vorschlagswert: Das Rad öffnet dort, ein Wisch nach unten wählt den Wert vom letzten Mal.
-function optionsHTML(values, cur, suggest, label){
+// Ohne eigenen Eintrag steht das Rad auf dem Vorschlag (Wert vom letzten Mal), grau dargestellt.
+// Rad öffnen und schließen übernimmt den Vorschlag; „–“ ganz oben leert das Feld.
+let cleared = new Set();
+function pickerHTML(id, e, s, k, values, suggest, label, extra){
+  const cur = state.entries[e.name][s][k];
+  const key = e.name+"|"+s+"|"+k;
+  const shown = cur !== null ? cur : (cleared.has(key) || suggest === null || suggest === undefined ? null : suggest);
+  const isSugg = cur === null && shown !== null;
   const list = [...values];
-  if(cur!==null && !list.includes(cur)){ list.push(cur); list.sort((a,b)=>a-b); }
-  const blank = `<option value=""${cur===null ? " selected" : ""}>–</option>`;
-  let out = "", placed = false;
-  for(const v of list){
-    if(!placed && suggest!==null && suggest!==undefined && v >= suggest){ out += blank; placed = true; }
-    out += `<option value="${v}"${v===cur ? " selected" : ""}>${label(v)}</option>`;
-  }
-  if(!placed) out = (suggest===null || suggest===undefined) ? blank + out : out + blank;
-  return out + `<option value="other">Anderer Wert …</option>`;
+  if(shown !== null && !list.includes(shown)){ list.push(shown); list.sort((a,b)=>a-b); }
+  let out = `<option value=""${shown===null ? " selected" : ""}>–</option>`;
+  for(const v of list) out += `<option value="${v}"${v===shown ? " selected" : ""}>${label(v)}</option>`;
+  out += `<option value="other">Anderer Wert …</option>`;
+  return `<select id="${id}" required class="${isSugg ? "sugg" : ""}" data-ex="${e.idx}" data-s="${s}" data-k="${k}"${extra}>${out}</select>`;
+}
+function pickCtx(t){
+  const e = plan[state.workout].exercises[Number(t.dataset.ex)], sIdx = Number(t.dataset.s), k = Number(t.dataset.k);
+  return {e, sIdx, k, cell: state.entries[e.name][sIdx], key: e.name+"|"+sIdx+"|"+k};
 }
 function onPick(ev){
-  const t = ev.target, e = plan[state.workout].exercises[Number(t.dataset.ex)];
-  const sIdx = Number(t.dataset.s), k = Number(t.dataset.k);
-  const cell = state.entries[e.name][sIdx];
+  const t = ev.target, {k, cell, key} = pickCtx(t);
   if(t.value === "other"){
     const ans = window.prompt(k===0 ? "Gewicht in kg" : "Wiederholungen", cell[k]===null ? "" : fmt(cell[k]));
     const n = num(ans);
-    if(ans !== null && n !== null && n >= 0) cell[k] = k===0 ? Math.round(n*100)/100 : Math.round(n);
+    if(ans !== null && n !== null && n >= 0){ cell[k] = k===0 ? Math.round(n*100)/100 : Math.round(n); cleared.delete(key); }
     saveDraft(); renderEntry();
     return;
   }
-  const n = t.value === "" ? null : Number(t.value);
-  cell[k] = n;
+  if(t.value === ""){ cell[k] = null; cleared.add(key); }
+  else { cell[k] = Number(t.value); cleared.delete(key); }
+  t.classList.remove("sugg");
+  saveDraft(); refreshStatus();
+}
+// Rad geöffnet und ohne Änderung geschlossen: Vorschlag gilt als übernommen
+function onPickClose(ev){
+  const t = ev.target;
+  if(!t.classList.contains("sugg") || t.value === "" || t.value === "other") return;
+  const {k, cell} = pickCtx(t);
+  cell[k] = Number(t.value);
+  t.classList.remove("sugg");
   saveDraft(); refreshStatus();
 }
 
