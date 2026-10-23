@@ -24,6 +24,7 @@
   --plate-yellow:#8a6500; --plate-yellow-soft:#fbf1d2;
   --ok:#1d7a46; --ok-soft:#ddf1e5; --warn:#a33a12; --warn-soft:#fbe5dc;
   --input:#f6f8f9;
+  --s1:#1f47c7; --s2:#b07800; --grid:#e1e6ea;
   --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
@@ -34,7 +35,7 @@
   --accent:#7d97ff; --accent-ink:#0b1020; --accent-soft:#1d2645;
   --plate-yellow:#f0c75a; --plate-yellow-soft:#3a3016;
   --ok:#6fd39b; --ok-soft:#163324; --warn:#ff9a72; --warn-soft:#3d2219;
-  --input:#11161a; color-scheme:dark}}
+  --input:#11161a; --s1:#6283f0; --s2:#b58a28; --grid:#252c33; color-scheme:dark}}
 
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
@@ -95,6 +96,42 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .field input{width:100%;box-sizing:border-box;font-family:var(--f-num);font-size:18px;font-variant-numeric:tabular-nums;background:var(--input);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 38px 9px 10px;min-height:46px;-webkit-appearance:none;appearance:none}
 .field input::placeholder{color:var(--muted);opacity:.55}
 .field span{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--muted);pointer-events:none}
+.field select{width:100%;box-sizing:border-box;font-family:var(--f-num);font-size:18px;font-variant-numeric:tabular-nums;background:var(--input);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:9px 38px 9px 10px;min-height:46px;-webkit-appearance:none;appearance:none}
+.field select:invalid{color:var(--muted)}
+.field select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Statistik */
+.stats{display:grid;gap:14px;margin-top:16px}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:2px;min-width:0}
+.tile .k{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tile .v{font-family:var(--f-display);font-size:clamp(21px,6.4vw,30px);font-weight:700;line-height:1.05;white-space:nowrap}
+.tile .v small{font-size:.6em;margin-left:2px}
+.tile .d{font-size:12px;color:var(--muted)}
+.tile .d.up{color:var(--ok)} .tile .d.down{color:var(--warn)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:8px;min-width:0}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.panel h2{font-size:21px}
+.panel .sub{font-size:12px;color:var(--muted)}
+.legend{display:flex;gap:12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:3px;border-radius:2px;margin-right:5px;vertical-align:3px}
+.seg{display:flex;gap:2px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg button{border:0;background:transparent;border-radius:6px;padding:4px 10px;font-size:13px;color:var(--muted);font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.chart{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.chart svg{display:block;overflow:visible}
+.chart text{font-family:var(--f-num);font-size:10px;fill:var(--muted)}
+.tip{position:absolute;top:0;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 9px;font-size:12px;line-height:1.35;white-space:nowrap;transform:translateX(-50%);z-index:2}
+.tip b{font-weight:600}
+.tip .sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
+.multiples{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+@media (min-width:600px){.multiples{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mini .panel-head h3{font-size:18px;line-height:1.15;min-width:0;overflow-wrap:anywhere}
+.mini .figs{font-size:12px;color:var(--muted);text-align:right;white-space:nowrap}
+.mini .figs b{font-family:var(--f-num);color:var(--ink);font-size:14px}
+.nochart{font-size:13px;color:var(--muted);padding:18px 0}
+.section-title{font-family:var(--f-display);font-size:21px;font-weight:700;margin:6px 0 -4px;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.section-title span{font-family:var(--f-body);font-size:12px;font-weight:400;color:var(--muted)}
 .copy{justify-self:start;border:0;background:transparent;color:var(--accent);font-size:13px;font-weight:500;padding:2px 0}
 
 .empty{margin-top:28px;padding:20px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
@@ -149,6 +186,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
         <div class="tabs" role="tablist">
           <button id="tab-entry" role="tab" aria-selected="true">Eintragen</button>
           <button id="tab-hist" role="tab" aria-selected="false">Verlauf</button>
+          <button id="tab-stats" role="tab" aria-selected="false">Statistik</button>
         </div>
       </div>
       <div class="session" id="sessionRow">
@@ -162,6 +200,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
     <div id="banner"></div>
     <main id="entry"><div class="empty">Lade dein Google Sheet …</div></main>
     <section id="hist" hidden></section>
+    <section id="stats" hidden></section>
     <div class="footer"><button class="linkbtn" id="openSettings">Verbindung ändern</button></div>
   </div>
 
@@ -318,6 +357,7 @@ async function sync(){
     const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#entry");
     if(typing) refreshStatus(); else selectSession();
     if(!$("hist").hidden) renderHistory();
+    if(!$("stats").hidden) renderStats();
     if($("banner").dataset.kind === "err") clearBanner();
   }catch(e){
     syncError = e;
@@ -391,35 +431,81 @@ function renderEntry(){
       const topped = last && up && last.sets.every(s => s[1]!==null && s[1]>=up);
       const lastTxt = last ? last.sets.filter(s=>s[0]!==null).map(s=>`${fmt(s[0])}×${s[1]??"–"}`).join(" · ") : "";
       const sets = state.entries[e.name];
+      const wVals = weightValues(e.name);
       html += `<article class="card">
         <div class="card-head"><div><h3>${esc(e.name)}</h3><div class="meta">${[e.device, e.reps ? e.reps+" Wdh." : ""].filter(Boolean).map(esc).join(" · ")}</div></div><span class="chip" id="chip-${e.idx}"></span></div>
         ${last ? `<div class="last"><span>Zuletzt ${shortDE(last.date)}: <span class="num">${lastTxt}</span></span>${sparkSVG(history(e.name))}</div>` : `<div class="last">Noch keine früheren Einträge</div>`}
         ${topped ? `<div class="hint">Letztes Mal alle Sätze ≥ ${up} Wdh. Zeit, das Gewicht zu erhöhen.</div>` : ""}
         <div class="sets">
           ${[0,1,2].map(s => `<div class="set"><label for="w-${e.idx}-${s}">Satz ${s+1}</label>
-            <div class="field"><input id="w-${e.idx}-${s}" inputmode="decimal" autocomplete="off" placeholder="${last ? fmt(last.sets[s][0]) : ""}" value="${fmt(sets[s][0])}" data-ex="${e.idx}" data-s="${s}" data-k="0"><span>kg</span></div>
+            <div class="field"><select id="w-${e.idx}-${s}" required data-ex="${e.idx}" data-s="${s}" data-k="0">${optionsHTML(wVals, sets[s][0], suggestWeight(e.name, s, last, sets), fmt)}</select><span>kg</span></div>
             <span class="x">×</span>
-            <div class="field"><input id="r-${e.idx}-${s}" inputmode="numeric" autocomplete="off" placeholder="${last ? (last.sets[s][1]??"") : ""}" value="${sets[s][1]??""}" data-ex="${e.idx}" data-s="${s}" data-k="1" aria-label="Satz ${s+1} Wiederholungen"><span>Wdh</span></div></div>`).join("")}
+            <div class="field"><select id="r-${e.idx}-${s}" required data-ex="${e.idx}" data-s="${s}" data-k="1" aria-label="Satz ${s+1} Wiederholungen">${optionsHTML(REPS, sets[s][1], suggestReps(e, s, last), String)}</select><span>Wdh</span></div></div>`).join("")}
         </div>
-        ${last ? `<button class="copy" data-copy="${e.idx}">Gewichte von ${shortDE(last.date)} übernehmen</button>` : ""}
+        ${last ? `<button class="copy" data-copy="${e.idx}">Werte vom ${shortDE(last.date)} übernehmen</button>` : ""}
       </article>`;
     }
     html += `</div>`;
   }
   $("entry").innerHTML = html;
-  $("entry").querySelectorAll("input").forEach(inp => inp.addEventListener("input", onInput));
+  $("entry").querySelectorAll("select").forEach(sel => sel.addEventListener("change", onPick));
   $("entry").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
     const idx = b.dataset.copy, e = cfgW.exercises[Number(idx)], last = lastSession(e.name), sets = state.entries[e.name];
-    for(let s=0; s<3; s++){ if(sets[s][0]===null){ sets[s][0] = last.sets[s][0]; $(`w-${idx}-${s}`).value = fmt(last.sets[s][0]); } }
-    saveDraft(); refreshStatus();
+    for(let s=0; s<3; s++){
+      if(sets[s][0]===null) sets[s][0] = last.sets[s][0];
+      if(sets[s][1]===null) sets[s][1] = last.sets[s][1];
+    }
+    saveDraft(); renderEntry();
   });
   refreshStatus();
 }
 
-function onInput(ev){
+/* ---------- Auswahlräder ---------- */
+const REPS = Array.from({length: 40}, (_, i) => i + 1);
+function weightValues(ex){
+  const ws = [...new Set(log.filter(l => l.ex===ex).flatMap(l => l.sets.map(s => s[0])).filter(v => v!==null && v>0))].sort((a,b)=>a-b);
+  const step = 0.5; // feste Schrittweite für alle Übungen
+  const max = ws.length ? ws[ws.length-1]*1.5 + 5 : 60;
+  const out = new Set();
+  for(let v = step; v <= max + 1e-9; v += step) out.add(+v.toFixed(2));
+  ws.forEach(v => out.add(v));
+  return [...out].sort((a,b)=>a-b);
+}
+function suggestWeight(ex, s, last, sets){
+  if(last && last.sets[s][0]!==null) return last.sets[s][0];
+  for(let i=s-1; i>=0; i--) if(sets[i][0]!==null) return sets[i][0];
+  return null;
+}
+function suggestReps(e, s, last){
+  if(last && last.sets[s][1]!==null) return last.sets[s][1];
+  const m = String(e.reps||"").match(/\d+/); return m ? Number(m[0]) : 10;
+}
+// Das leere „–“ steht direkt vor dem Vorschlagswert: Das Rad öffnet dort, ein Wisch nach unten wählt den Wert vom letzten Mal.
+function optionsHTML(values, cur, suggest, label){
+  const list = [...values];
+  if(cur!==null && !list.includes(cur)){ list.push(cur); list.sort((a,b)=>a-b); }
+  const blank = `<option value=""${cur===null ? " selected" : ""}>–</option>`;
+  let out = "", placed = false;
+  for(const v of list){
+    if(!placed && suggest!==null && suggest!==undefined && v >= suggest){ out += blank; placed = true; }
+    out += `<option value="${v}"${v===cur ? " selected" : ""}>${label(v)}</option>`;
+  }
+  if(!placed) out = (suggest===null || suggest===undefined) ? blank + out : out + blank;
+  return out + `<option value="other">Anderer Wert …</option>`;
+}
+function onPick(ev){
   const t = ev.target, e = plan[state.workout].exercises[Number(t.dataset.ex)];
-  const n = num(t.value);
-  state.entries[e.name][Number(t.dataset.s)][Number(t.dataset.k)] = Number(t.dataset.k)===0 ? n : (n===null ? null : Math.round(n));
+  const sIdx = Number(t.dataset.s), k = Number(t.dataset.k);
+  const cell = state.entries[e.name][sIdx];
+  if(t.value === "other"){
+    const ans = window.prompt(k===0 ? "Gewicht in kg" : "Wiederholungen", cell[k]===null ? "" : fmt(cell[k]));
+    const n = num(ans);
+    if(ans !== null && n !== null && n >= 0) cell[k] = k===0 ? Math.round(n*100)/100 : Math.round(n);
+    saveDraft(); renderEntry();
+    return;
+  }
+  const n = t.value === "" ? null : Number(t.value);
+  cell[k] = n;
   saveDraft(); refreshStatus();
 }
 
@@ -481,10 +567,203 @@ function renderHistory(){
 }
 function setTab(t){
   const entry = t === "entry";
-  $("tab-entry").setAttribute("aria-selected", entry); $("tab-hist").setAttribute("aria-selected", !entry);
-  $("entry").hidden = !entry; $("hist").hidden = entry; $("savebar").hidden = !entry; $("sessionRow").hidden = !entry; $("summary").hidden = !entry;
-  if(!entry) renderHistory();
+  for(const n of ["entry","hist","stats"]){ $("tab-"+n).setAttribute("aria-selected", t===n); $(n).hidden = t!==n; }
+  $("savebar").hidden = !entry; $("sessionRow").hidden = !entry; $("summary").hidden = !entry;
+  if(t==="hist") renderHistory();
+  if(t==="stats") renderStats();
   window.scrollTo(0, 0);
+}
+
+/* ---------- Statistik ---------- */
+let statPeriod = LS.get("statPeriod", "week");
+const DAY = 86400000;
+function isoMs(iso){ const [y,m,d] = iso.split("-").map(Number); return new Date(y, m-1, d).getTime(); }
+function msISO(ms){ const d = new Date(ms); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function mondayOf(iso){ const d = new Date(isoMs(iso)); const wd = (d.getDay()+6)%7; d.setDate(d.getDate()-wd); return msISO(d.getTime()); }
+const MONTHS = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+function fmtNum(v, dec){ return v.toLocaleString("de-DE", {maximumFractionDigits: dec ?? 1}); }
+
+function niceTicks(min, max, n){
+  if(min === max){ min = min > 0 ? min*0.9 : min-1; max = max*1.1 || 1; }
+  const raw = (max-min)/(n||4), mag = Math.pow(10, Math.floor(Math.log10(raw))), e = raw/mag;
+  const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+  const lo = Math.floor(min/step)*step, hi = Math.ceil(max/step)*step, t = [];
+  for(let v = lo; v <= hi + step/1000; v += step) t.push(+v.toFixed(6));
+  return t;
+}
+function yLabel(v){ return v >= 10000 ? fmtNum(v/1000, 0)+"k" : v >= 1000 ? fmtNum(v/1000, 1)+"k" : fmtNum(v, 1); }
+
+function sessionsList(){
+  const m = new Map();
+  for(const l of log){
+    if(!hasAny(l.sets)) continue;
+    const k = l.date+"|"+l.workout;
+    if(!m.has(k)) m.set(k, {date: l.date, workout: l.workout, vol: 0});
+    m.get(k).vol += volume(l.sets);
+  }
+  return [...m.values()].sort((a,b) => a.date < b.date ? -1 : 1);
+}
+
+/* Liniendiagramm mit Antipp-/Wisch-Tooltip. series: [{name, color, pts:[{x(ms), y}]}] */
+function drawLine(el, opt){
+  const all = opt.series.flatMap(s => s.pts);
+  if(all.length < 2){ el.innerHTML = `<div class="nochart">Noch zu wenig Daten für einen Verlauf.</div>`; return; }
+  const W = Math.max(240, el.clientWidth), H = opt.height || 170, m = {l: 38, r: 14, t: 8, b: 22};
+  let x0 = Math.min(...all.map(p=>p.x)), x1 = Math.max(...all.map(p=>p.x));
+  if(x0 === x1){ x0 -= 3*DAY; x1 += 3*DAY; }
+  const ys = all.map(p=>p.y), yt = niceTicks(opt.zero ? 0 : Math.min(...ys), Math.max(...ys), opt.ticks || 4);
+  const y0 = yt[0], y1 = yt[yt.length-1];
+  const X = x => m.l + (x-x0)/(x1-x0)*(W-m.l-m.r), Y = y => m.t + (1-(y-y0)/(y1-y0))*(H-m.t-m.b);
+  let g = "";
+  for(const t of yt) g += `<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--grid)" stroke-width="1"/><text x="${m.l-6}" y="${Y(t)+3}" text-anchor="end">${yLabel(t)}</text>`;
+  // Monatsanfänge als x-Beschriftung
+  const d = new Date(x0); d.setDate(1); d.setMonth(d.getMonth()+1);
+  const marks = []; while(d.getTime() <= x1){ marks.push(d.getTime()); d.setMonth(d.getMonth()+1); }
+  const every = Math.ceil(marks.length / Math.max(1, Math.floor((W-m.l-m.r)/48)));
+  marks.forEach((t,i) => { if(i % every) return; g += `<line x1="${X(t)}" x2="${X(t)}" y1="${H-m.b}" y2="${H-m.b+4}" stroke="var(--line)"/><text x="${X(t)}" y="${H-6}" text-anchor="middle">${MONTHS[new Date(t).getMonth()]}</text>`; });
+  g += `<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" stroke="var(--line)"/>`;
+  for(const s of opt.series){
+    if(!s.pts.length) continue;
+    const pts = s.pts.map(p => `${X(p.x).toFixed(1)},${Y(p.y).toFixed(1)}`).join(" ");
+    if(opt.area) g += `<polygon points="${X(s.pts[0].x).toFixed(1)},${H-m.b} ${pts} ${X(s.pts[s.pts.length-1].x).toFixed(1)},${H-m.b}" fill="${s.color}" fill-opacity=".10"/>`;
+    g += `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    const e = s.pts[s.pts.length-1];
+    g += `<circle cx="${X(e.x)}" cy="${Y(e.y)}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+  }
+  g += `<g class="hover" visibility="hidden"><line class="hl" y1="${m.t}" y2="${H-m.b}" stroke="var(--muted)" stroke-dasharray="3 3"/>${opt.series.map((s,i)=>`<circle class="hd${i}" r="4.5" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`).join("")}</g>`;
+  el.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="${esc(opt.label||"")}">${g}</svg><div class="tip" hidden></div>`;
+
+  const svg = el.querySelector("svg"), hov = svg.querySelector(".hover"), tip = el.querySelector(".tip");
+  const xsAll = [...new Set(all.map(p=>p.x))].sort((a,b)=>a-b);
+  const show = (clientX) => {
+    const r = svg.getBoundingClientRect(), px = clientX - r.left;
+    let best = xsAll[0]; for(const x of xsAll) if(Math.abs(X(x)-px) < Math.abs(X(best)-px)) best = x;
+    hov.setAttribute("visibility", "visible");
+    hov.querySelector(".hl").setAttribute("x1", X(best)); hov.querySelector(".hl").setAttribute("x2", X(best));
+    let rows = "";
+    opt.series.forEach((s,i) => {
+      const p = s.pts.find(q => q.x === best), c = hov.querySelector(".hd"+i);
+      if(p){ c.setAttribute("cx", X(p.x)); c.setAttribute("cy", Y(p.y)); c.setAttribute("visibility","visible"); rows += `<div>${opt.series.length>1 ? `<span class="sw" style="background:${s.color}"></span>${esc(s.name)}: ` : ""}<b>${opt.fmt(p.y)}</b></div>`; }
+      else c.setAttribute("visibility","hidden");
+    });
+    tip.innerHTML = `<div>${isoToDE(msISO(best))}</div>${rows}`;
+    tip.hidden = false;
+    const tw = tip.offsetWidth, cx = Math.min(Math.max(X(best), tw/2), W - tw/2);
+    tip.style.left = cx+"px"; tip.style.top = (-tip.offsetHeight - 6)+"px";
+  };
+  const hide = () => { hov.setAttribute("visibility","hidden"); tip.hidden = true; };
+  el.onpointerdown = el.onpointermove = (ev) => show(ev.clientX);
+  el.onpointerleave = el.onpointercancel = hide;
+  el.onpointerup = (ev) => { if(ev.pointerType !== "mouse") setTimeout(hide, 1800); };
+}
+
+/* Säulendiagramm. bars: [{label, tip, value, partial}] */
+function drawBars(el, opt){
+  if(!opt.bars.length){ el.innerHTML = `<div class="nochart">Noch keine Daten.</div>`; return; }
+  const W = Math.max(240, el.clientWidth), H = opt.height || 170, m = {l: 38, r: 6, t: 8, b: 22};
+  const yt = niceTicks(0, Math.max(...opt.bars.map(b=>b.value)), 4), y1 = yt[yt.length-1];
+  const n = opt.bars.length, band = (W-m.l-m.r)/n, bw = Math.max(3, Math.min(34, band-2));
+  const Y = v => m.t + (1-v/y1)*(H-m.t-m.b), base = H-m.b;
+  let g = "";
+  for(const t of yt) g += `<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--grid)"/><text x="${m.l-6}" y="${Y(t)+3}" text-anchor="end">${yLabel(t)}</text>`;
+  const every = Math.ceil(n / Math.max(1, Math.floor((W-m.l-m.r)/40)));
+  opt.bars.forEach((b,i) => {
+    const cx = m.l + band*i + band/2, x = cx - bw/2, y = Y(b.value), h = base - y, r = Math.min(4, bw/2, h);
+    if(h > 0) g += `<path d="M${x},${base} V${y+r} Q${x},${y} ${x+r},${y} H${x+bw-r} Q${x+bw},${y} ${x+bw},${y+r} V${base} Z" fill="var(--s1)" fill-opacity="${b.partial ? .45 : 1}"/>`;
+    if(!((n-1-i) % every)) g += `<text x="${cx}" y="${H-6}" text-anchor="middle">${esc(b.label)}</text>`;
+  });
+  g += `<line x1="${m.l}" x2="${W-m.r}" y1="${base}" y2="${base}" stroke="var(--line)"/><rect class="hb" y="${m.t}" height="${base-m.t}" width="${band}" fill="var(--ink)" fill-opacity=".06" visibility="hidden"/>`;
+  el.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="${esc(opt.label||"")}">${g}</svg><div class="tip" hidden></div>`;
+  const svg = el.querySelector("svg"), hb = svg.querySelector(".hb"), tip = el.querySelector(".tip");
+  const show = (clientX) => {
+    const r = svg.getBoundingClientRect(), i = Math.min(n-1, Math.max(0, Math.floor((clientX - r.left - m.l)/band))), b = opt.bars[i];
+    hb.setAttribute("x", m.l + band*i); hb.setAttribute("visibility","visible");
+    tip.innerHTML = `<div>${esc(b.tip)}${b.partial ? " (laufend)" : ""}</div><div><b>${fmtNum(b.value, 0)} kg</b></div>`;
+    tip.hidden = false;
+    const tw = tip.offsetWidth, cx = Math.min(Math.max(m.l + band*i + band/2, tw/2), W - tw/2);
+    tip.style.left = cx+"px"; tip.style.top = (-tip.offsetHeight - 6)+"px";
+  };
+  const hide = () => { hb.setAttribute("visibility","hidden"); tip.hidden = true; };
+  el.onpointerdown = el.onpointermove = (ev) => show(ev.clientX);
+  el.onpointerleave = el.onpointercancel = hide;
+  el.onpointerup = (ev) => { if(ev.pointerType !== "mouse") setTimeout(hide, 1800); };
+}
+
+function renderStats(){
+  const el = $("stats");
+  const ss = sessionsList();
+  if(!ss.length){ el.innerHTML = `<div class="empty">Noch keine Trainings im Log.</div>`; return; }
+  const css = getComputedStyle(document.documentElement);
+  const c1 = css.getPropertyValue("--s1").trim(), c2 = css.getPropertyValue("--s2").trim();
+
+  // Kennzahlen
+  const total = ss.reduce((a,s)=>a+s.vol, 0);
+  const today = isoMs(todayISO());
+  const sumRange = (from, to) => ss.filter(s => { const t = isoMs(s.date); return t > from && t <= to; }).reduce((a,s)=>a+s.vol, 0);
+  const last28 = sumRange(today-28*DAY, today), prev28 = sumRange(today-56*DAY, today-28*DAY);
+  const delta = prev28 ? Math.round((last28/prev28-1)*100) : null;
+  const byW = {}; ss.forEach(s => byW[s.workout] = (byW[s.workout]||0)+1);
+  const split = Object.keys(byW).sort().map(w => `${esc(w.replace(/^Workout\s+/i,""))}: ${byW[w]}`).join(" · ");
+
+  // Säulen: Woche oder Monat
+  const buckets = new Map();
+  for(const s of ss){
+    const key = statPeriod === "week" ? mondayOf(s.date) : s.date.slice(0,7);
+    buckets.set(key, (buckets.get(key)||0) + s.vol);
+  }
+  // Lücken (Wochen/Monate ohne Training) mit 0 auffüllen
+  const keys = [...buckets.keys()].sort(), filled = [];
+  if(keys.length){
+    if(statPeriod === "week"){ for(let t = isoMs(keys[0]); t <= isoMs(mondayOf(todayISO())); t += 7*DAY){ const k = mondayOf(msISO(t + DAY/2)); if(!filled.includes(k)) filled.push(k); } }
+    else { let [y,mo] = keys[0].split("-").map(Number); const end = todayISO().slice(0,7); for(;;){ const k = y+"-"+String(mo).padStart(2,"0"); filled.push(k); if(k >= end) break; mo++; if(mo > 12){ mo = 1; y++; } } }
+  }
+  const curKey = statPeriod === "week" ? mondayOf(todayISO()) : todayISO().slice(0,7);
+  const bars = filled.map(k => statPeriod === "week"
+    ? {label: shortDE(k).slice(0,5).replace(/\.$/,""), tip: "Woche ab "+isoToDE(k), value: buckets.get(k)||0, partial: k===curKey}
+    : {label: MONTHS[Number(k.slice(5))-1], tip: MONTHS[Number(k.slice(5))-1]+" "+k.slice(0,4), value: buckets.get(k)||0, partial: k===curKey});
+
+  // Kraftentwicklung: alle Übungen, Planreihenfolge zuerst
+  const order = [];
+  for(const w of workouts) for(const e of (plan[w]||{exercises:[]}).exercises) if(!order.includes(e.name)) order.push(e.name);
+  for(const l of log) if(hasAny(l.sets) && !order.includes(l.ex)) order.push(l.ex);
+  const strength = order.map(ex => {
+    const byDate = new Map();
+    for(const l of log){ if(l.ex !== ex || !hasAny(l.sets)) continue; const mx = Math.max(...l.sets.map(s=>s[0]??0)); if(mx > 0) byDate.set(l.date, Math.max(byDate.get(l.date)||0, mx)); }
+    const pts = [...byDate.entries()].sort((a,b)=>a[0]<b[0]?-1:1).map(([d,y]) => ({x: isoMs(d), y}));
+    return {ex, pts, inPlan: workouts.some(w => (plan[w]||{exercises:[]}).exercises.some(e => e.name===ex))};
+  }).filter(s => s.pts.length);
+
+  const sessSeries = Object.keys(byW).sort().map((w,i) => ({name: w, color: i===0 ? c1 : c2, pts: ss.filter(s=>s.workout===w).map(s => ({x: isoMs(s.date), y: s.vol}))}));
+
+  el.innerHTML = `<div class="stats">
+    <div class="tiles">
+      <div class="tile"><span class="k">Workouts</span><span class="v num">${ss.length}</span><span class="d">${split}</span></div>
+      <div class="tile"><span class="k">Gesamt&shy;volumen</span><span class="v num">${fmtNum(total/1000, 1)}<small>t</small></span><span class="d">seit ${shortDE(ss[0].date)}</span></div>
+      <div class="tile"><span class="k">Letzte 4 Wo.</span><span class="v num">${fmtNum(last28/1000, 1)}<small>t</small></span><span class="d ${delta===null ? "" : delta >= 0 ? "up" : "down"}">${delta===null ? "kein Vergleich" : (delta >= 0 ? "▲ +" : "▼ ")+delta+" % ggü. davor"}</span></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Volumen pro Einheit</h2><div class="legend">${sessSeries.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div></div>
+      <div class="sub">Summe Gewicht × Wiederholungen je Trainingstag. Antippen oder wischen für Werte.</div>
+      <div class="chart" id="chSess"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Volumen pro ${statPeriod === "week" ? "Woche" : "Monat"}</h2>
+        <div class="seg"><button id="perW" aria-pressed="${statPeriod==="week"}">Woche</button><button id="perM" aria-pressed="${statPeriod==="month"}">Monat</button></div></div>
+      <div class="sub">Heller Balken: ${statPeriod === "week" ? "Woche" : "Monat"} läuft noch.</div>
+      <div class="chart" id="chPer"></div>
+    </div>
+    <div class="section-title">Kraftentwicklung <span>Schwerster Satz pro Einheit, kg</span></div>
+    <div class="multiples">${strength.map((s,i) => {
+      const first = s.pts[0].y, cur = s.pts[s.pts.length-1].y, best = Math.max(...s.pts.map(p=>p.y)), d = cur-first;
+      return `<div class="panel mini"><div class="panel-head"><h3>${esc(s.ex)}</h3><div class="figs">aktuell <b>${fmt(cur)}</b> · max ${fmt(best)}<br>${d===0 ? "±0" : (d>0?"+":"")+fmt(+d.toFixed(2))} kg seit ${shortDE(msISO(s.pts[0].x))}</div></div><div class="chart" id="chS${i}"></div></div>`;
+    }).join("")}</div>
+  </div>`;
+
+  drawLine($("chSess"), {series: sessSeries, fmt: v => fmtNum(v,0)+" kg", zero: true, label: "Volumen pro Trainingseinheit"});
+  drawBars($("chPer"), {bars, label: "Trainingsvolumen pro " + (statPeriod==="week" ? "Woche" : "Monat")});
+  strength.forEach((s,i) => drawLine($("chS"+i), {series: [{name: s.ex, color: c1, pts: s.pts}], fmt: v => fmt(v)+" kg", area: true, height: 120, ticks: 3, label: "Maximalgewicht "+s.ex}));
+  $("perW").onclick = () => { statPeriod = "week"; LS.set("statPeriod", statPeriod); renderStats(); };
+  $("perM").onclick = () => { statPeriod = "month"; LS.set("statPeriod", statPeriod); renderStats(); };
 }
 
 /* ---------- Einrichtung ---------- */
@@ -525,6 +804,8 @@ function boot(){
   $("syncBtn").onclick = sync;
   $("tab-entry").onclick = () => setTab("entry");
   $("tab-hist").onclick = () => setTab("hist");
+  $("tab-stats").onclick = () => setTab("stats");
+  let rsz; window.addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(() => { if(!$("stats").hidden) renderStats(); }, 150); });
   $("openSettings").onclick = showSetup;
   $("cfgSave").onclick = saveCfg;
   $("cfgCancel").onclick = showApp;
