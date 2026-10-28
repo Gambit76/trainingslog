@@ -5,6 +5,7 @@
  * Dein vorhandener Code (z. B. für den Button) bleibt unverändert.
  * Alle internen Namen beginnen mit TLAPI_, damit nichts mit deinem Code kollidiert.
  * Global sichtbar sind nur: doGet, doPost, setupKey.
+ * Mobility-Routine: eigene Zeilen mit Workout „Mobility“, Spalte J „Gemacht“ = ✓.
  *
  * Einrichtung (Details in der Anleitung):
  *  1. Funktion „setupKey“ einmal ausführen, Schlüssel aus dem Ausführungsprotokoll kopieren.
@@ -17,6 +18,8 @@
 const TLAPI_LOG_SHEET = 'Trainingslog';
 const TLAPI_PLAN_SHEET = 'Trainingsplan';
 const TLAPI_FIRST_ROW = 4; // Zeilen 1–3 sind Titel und Kopfzeile
+const TLAPI_MOB_WORKOUT = 'Mobility';          // Mobility-Zeilen: Spalte B
+const TLAPI_MOB_EX = 'Mobility-Routine';       // Spalte C; Spalte J (Gemacht) = ✓
 
 /** Einmal ausführen: erzeugt den geheimen App-Schlüssel (erneut ausführen = neuer Schlüssel). */
 function setupKey() {
@@ -48,6 +51,7 @@ function TLAPI_handle_(p, isPost) {
     if (p.action === 'ping') return TLAPI_json_({ ok: true });
     if (p.action === 'load') return TLAPI_json_(TLAPI_load_());
     if (p.action === 'save' && isPost) return TLAPI_json_(TLAPI_save_(p));
+    if (p.action === 'mobility' && isPost) return TLAPI_json_(TLAPI_mobility_(p));
     return TLAPI_json_({ ok: false, error: 'bad_request', message: 'Unbekannte Aktion' });
   } catch (err) {
     return TLAPI_json_({ ok: false, error: 'server', message: String((err && err.message) || err) });
@@ -62,14 +66,19 @@ function TLAPI_load_() {
 
   const last = TLAPI_lastRow_(sh);
   const rows = last >= TLAPI_FIRST_ROW
-    ? sh.getRange(TLAPI_FIRST_ROW, 1, last - TLAPI_FIRST_ROW + 1, 9).getValues()
+    ? sh.getRange(TLAPI_FIRST_ROW, 1, last - TLAPI_FIRST_ROW + 1, 10).getValues()
     : [];
 
   const log = [];
+  const mob = []; // Tage, an denen die Mobility-Routine gemacht wurde
   rows.forEach(function (r) {
     const date = TLAPI_toISO_(r[0], tz);
     const ex = String(r[2] || '').trim();
     if (!date || !ex) return;
+    if (String(r[1] || '').trim() === TLAPI_MOB_WORKOUT) {
+      if (TLAPI_done_(r[9]) && mob.indexOf(date) < 0) mob.push(date);
+      return;
+    }
     log.push({
       date: date,
       workout: String(r[1] || '').trim(),
@@ -83,7 +92,7 @@ function TLAPI_load_() {
     ? planSheet.getRange(1, 1, Math.min(planSheet.getMaxRows(), 100), 6).getDisplayValues()
     : [];
 
-  return { ok: true, log: log, plan: plan };
+  return { ok: true, log: log, plan: plan, mob: mob };
 }
 
 function TLAPI_save_(p) {
@@ -150,7 +159,53 @@ function TLAPI_save_(p) {
   }
 }
 
+/** Mobility-Routine für einen Tag als gemacht markieren oder zurücknehmen. */
+function TLAPI_mobility_(p) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(p.date || ''))) {
+    return { ok: false, error: 'bad_request', message: 'Datum fehlt' };
+  }
+  const done = p.done === true || p.done === 'true';
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const tz = ss.getSpreadsheetTimeZone();
+    const sh = ss.getSheetByName(TLAPI_LOG_SHEET);
+    const last = TLAPI_lastRow_(sh);
+
+    let row = 0;
+    if (last >= TLAPI_FIRST_ROW) {
+      sh.getRange(TLAPI_FIRST_ROW, 1, last - TLAPI_FIRST_ROW + 1, 3).getValues().forEach(function (r, i) {
+        if (TLAPI_toISO_(r[0], tz) === p.date && String(r[1] || '').trim() === TLAPI_MOB_WORKOUT) row = TLAPI_FIRST_ROW + i;
+      });
+    }
+
+    if (row) {
+      sh.getRange(row, 10).setValue(done ? '✓' : '');
+    } else if (done) {
+      row = last + 1;
+      if (row > sh.getMaxRows()) sh.insertRowsAfter(sh.getMaxRows(), 200);
+      if (row > TLAPI_FIRST_ROW) {
+        sh.getRange(row - 1, 1, 1, 9).copyTo(sh.getRange(row, 1, 1, 9), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+      }
+      sh.getRange(row, 1, 1, 3).setValues([[TLAPI_serial_(p.date), TLAPI_MOB_WORKOUT, TLAPI_MOB_EX]]);
+      sh.getRange(row, 1).setNumberFormat('dd.mm.yyyy');
+      sh.getRange(row, 10).setValue('✓');
+    }
+    SpreadsheetApp.flush();
+    return { ok: true };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /* ---------- Helfer (nur für die App-Schnittstelle) ---------- */
+
+function TLAPI_done_(v) {
+  const s = String(v === null || v === undefined ? '' : v).trim().toLowerCase();
+  return s === '✓' || s === 'x' || s === 'true' || s === '1' || s === 'ja';
+}
 
 function TLAPI_lastRow_(sh) {
   const n = sh.getLastRow();

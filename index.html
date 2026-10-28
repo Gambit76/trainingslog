@@ -50,7 +50,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .title-row{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap}
 .title-row h1{font-size:clamp(24px,7.5vw,30px);line-height:1;text-transform:uppercase;min-width:0}
 .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px}
-.tabs button{border:0;background:transparent;padding:5px 12px;border-radius:6px;font-weight:500;font-size:14px;color:var(--muted)}
+.tabs button{border:0;background:transparent;padding:5px 9px;border-radius:6px;font-weight:500;font-size:14px;color:var(--muted)}
 .tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
 .session{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .session input[type=date]{font:inherit;font-size:16px;font-family:var(--f-num);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 10px;min-height:40px;-webkit-appearance:none;appearance:none}
@@ -134,6 +134,24 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .section-title span{font-family:var(--f-body);font-size:12px;font-weight:400;color:var(--muted)}
 .copy{justify-self:start;border:0;background:transparent;color:var(--accent);font-size:13px;font-weight:500;padding:2px 0}
 
+.done{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;font-weight:500;font-size:15px}
+.done input{width:24px;height:24px;margin:0;accent-color:var(--ok);flex:none}
+.mob-card{margin-top:18px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:64px;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--input);text-align:left}
+.switch .lbl{font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.switch .track{flex:none;width:56px;height:32px;border-radius:999px;background:var(--line);position:relative}
+.switch .track::after{content:"";position:absolute;top:4px;left:4px;width:24px;height:24px;border-radius:50%;background:var(--surface);transition:transform .15s}
+.switch[aria-checked="true"]{border-color:var(--ok);background:var(--ok-soft)}
+.switch[aria-checked="true"] .track{background:var(--ok)}
+.switch[aria-checked="true"] .track::after{transform:translateX(24px)}
+.routine{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.routine li{font-size:13px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:3px 10px}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.day{display:grid;gap:2px;justify-items:center;padding:6px 0;border:1px solid var(--line);border-radius:8px;font-size:12px;color:var(--muted)}
+.day b{font-family:var(--f-num);font-weight:500;color:var(--ink);font-size:13px}
+.day.on{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
+.day.on b{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){.switch .track::after{transition:none}}
 .empty{margin-top:28px;padding:20px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
 
 .history{margin-top:16px;display:grid;gap:8px}
@@ -185,6 +203,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
         <h1>Trainingslog</h1>
         <div class="tabs" role="tablist">
           <button id="tab-entry" role="tab" aria-selected="true">Eintragen</button>
+          <button id="tab-mob" role="tab" aria-selected="false">Mobility</button>
           <button id="tab-hist" role="tab" aria-selected="false">Verlauf</button>
           <button id="tab-stats" role="tab" aria-selected="false">Statistik</button>
         </div>
@@ -199,6 +218,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 
     <div id="banner"></div>
     <main id="entry"><div class="empty">Lade dein Google Sheet …</div></main>
+    <section id="mob" hidden></section>
     <section id="hist" hidden></section>
     <section id="stats" hidden></section>
     <div class="footer"><button class="linkbtn" id="openSettings">Verbindung ändern</button></div>
@@ -227,7 +247,9 @@ let outbox = LS.get("outbox", []);      // gespeicherte, noch nicht übertragene
 let lastSync = LS.get("lastSync", null);
 let log = [];                           // {date, workout, ex, sets, pending?}
 let plan = {}, workouts = [];
-let state = { date: todayISO(), dateAuto: true, workout: null, entries: {} };
+let mobDays = new Set();                // Tage mit gemachter Mobility-Routine (laut Sheet + Warteschlange)
+const ROUTINE = ["Bird-Dog","Cat-Cow","Superman","Glute Bridge","Glute-Stretch","Crunches","L-Sit","Seated Forward Fold"];
+let state = { date: todayISO(), dateAuto: true, workout: null, entries: {}, mobDone: false };
 let syncing = false, syncError = null;
 
 /* ---------- Helfer ---------- */
@@ -248,6 +270,8 @@ function draftKey(){ return "draft:"+state.date+":"+state.workout; }
 function saveDraft(){ LS.set(draftKey(), state.entries); }
 function loadDraft(){ return LS.get(draftKey(), null); }
 function clearDraft(){ LS.del(draftKey()); }
+function mobDraft(){ return LS.get("mob:"+state.date, null); }
+function mobPending(){ return state.mobDone !== mobDays.has(state.date); }
 
 /* ---------- Schnittstelle zum Apps Script ---------- */
 class ApiError extends Error{ constructor(code, msg){ super(msg||code); this.code=code; } }
@@ -299,6 +323,7 @@ function parsePlan(vals){
   }
 }
 function applyJob(job){
+  if(job.type === "mob"){ if(job.done) mobDays.add(job.date); else mobDays.delete(job.date); return; }
   for(const en of job.entries){
     const hit = log.find(l => l.date===job.date && l.workout===job.workout && l.ex===en.ex);
     if(hit){ hit.sets = normSets(en.sets); hit.pending = true; }
@@ -307,6 +332,7 @@ function applyJob(job){
 }
 function ingest(data){
   parsePlan(data.plan);
+  mobDays = new Set(data.mob || []);
   log = (data.log || []).map(l => ({date: l.date, workout: String(l.workout||""), ex: String(l.ex||""), sets: normSets(l.sets)}));
   outbox.forEach(applyJob);
   log.sort((a,b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0); // stabil: Reihenfolge innerhalb eines Tages bleibt
@@ -333,7 +359,8 @@ async function flush(){
   while(outbox.length){
     const job = outbox[0];
     try{
-      await api("save", {date: job.date, workout: job.workout, entries: job.entries});
+      if(job.type === "mob") await api("mobility", {date: job.date, done: job.done});
+      else await api("save", {date: job.date, workout: job.workout, entries: job.entries});
     }catch(e){
       if(e.code === "bad_request"){ outbox.shift(); LS.set("outbox", outbox); showBanner("err", errMsg(e)); continue; }
       throw e;
@@ -348,7 +375,7 @@ async function sync(){
   try{
     await flush();
     const data = await api("load");
-    LS.set("cache", {log: data.log, plan: data.plan});
+    LS.set("cache", {log: data.log, plan: data.plan, mob: data.mob});
     ingest(data);
     lastSync = Date.now(); LS.set("lastSync", lastSync);
     syncError = null;
@@ -358,6 +385,7 @@ async function sync(){
     if(typing) refreshStatus(); else selectSession();
     if(!$("hist").hidden) renderHistory();
     if(!$("stats").hidden) renderStats();
+    if(!$("mob").hidden) renderMobility();
     if($("banner").dataset.kind === "err") clearBanner();
   }catch(e){
     syncError = e;
@@ -402,7 +430,10 @@ function selectSession(){
     const ex = existingRow(e.name);
     state.entries[e.name] = (draft && draft[e.name]) ? normSets(draft[e.name]) : (ex ? ex.sets.map(s=>[...s]) : emptySets());
   }
+  const md = mobDraft();
+  state.mobDone = md === null ? mobDays.has(state.date) : !!md;
   renderEntry();
+  renderMobility();
 }
 
 function sparkSVG(hist){
@@ -448,7 +479,10 @@ function renderEntry(){
     }
     html += `</div>`;
   }
+  if(cfgW.exercises.length) html += `<article class="card mob-card"><label class="done" for="mobCombo"><input type="checkbox" id="mobCombo"${state.mobDone ? " checked" : ""}>Mobility-Routine im Anschluss gemacht</label></article>`;
   $("entry").innerHTML = html;
+  const mc = $("mobCombo");
+  if(mc) mc.onchange = () => setMob(mc.checked);
   $("entry").querySelectorAll("select").forEach(sel => { sel.addEventListener("change", onPick); sel.addEventListener("blur", onPickClose); });
   $("entry").querySelectorAll("[data-copy]").forEach(b => b.onclick = () => {
     const idx = b.dataset.copy, e = cfgW.exercises[Number(idx)], last = lastSession(e.name), sets = state.entries[e.name];
@@ -551,22 +585,24 @@ function refreshStatus(){
   const prevDate = prev.length ? prev[prev.length-1].date : null;
   const prevVol = prevDate ? log.filter(l => l.workout===state.workout && l.date===prevDate).reduce((a,l)=>a+volume(l.sets),0) : 0;
   $("summary").innerHTML = exs.length ? `${done}/${exs.length} Übungen · Volumen <b class="num">${fmtKg(vol)} kg</b>` + (prevDate ? ` · zuletzt ${shortDE(prevDate)}: <span class="num">${fmtKg(prevVol)} kg</span>` : "") : "";
-  const p = pending();
-  $("saveBtn").disabled = p.length === 0;
+  const p = pending(), mp = mobPending();
+  $("saveBtn").disabled = p.length === 0 && !mp;
   const nNew = p.filter(x=>x.isNew).length, nChg = p.length - nNew;
-  $("saveStatus").textContent = p.length === 0 ? (done ? "Alles gespeichert" : "Noch nichts eingetragen")
-    : [nNew ? `${nNew} neu` : "", nChg ? `${nChg} geändert` : ""].filter(Boolean).join(", ") + ` · ${isoToDE(state.date)}`;
+  $("saveStatus").textContent = (p.length === 0 && !mp) ? (done || state.mobDone ? "Alles gespeichert" : "Noch nichts eingetragen")
+    : [nNew ? `${nNew} neu` : "", nChg ? `${nChg} geändert` : "", mp ? "Mobility" : ""].filter(Boolean).join(", ") + ` · ${isoToDE(state.date)}`;
 }
 
 function save(){
-  const p = pending();
-  if(!p.length) return;
-  const job = {id: Date.now().toString(36), date: state.date, workout: state.workout, entries: p.map(x => ({ex: x.e.name, sets: x.sets.map(s=>[...s])}))};
-  outbox.push(job); LS.set("outbox", outbox);
-  applyJob(job);
-  clearDraft();
-  renderEntry();
-  showBanner("ok", `Gespeichert: ${p.length} ${p.length===1 ? "Übung" : "Übungen"} für ${isoToDE(state.date)}.`);
+  const p = pending(), mp = mobPending();
+  if(!p.length && !mp) return;
+  const jobs = [];
+  if(p.length) jobs.push({id: Date.now().toString(36), date: state.date, workout: state.workout, entries: p.map(x => ({ex: x.e.name, sets: x.sets.map(s=>[...s])}))});
+  if(mp) jobs.push({id: Date.now().toString(36)+"m", type: "mob", date: state.date, done: state.mobDone});
+  jobs.forEach(j => { outbox.push(j); applyJob(j); });
+  LS.set("outbox", outbox);
+  clearDraft(); LS.del("mob:"+state.date);
+  renderEntry(); renderMobility();
+  showBanner("ok", [p.length ? `${p.length} ${p.length===1 ? "Übung" : "Übungen"}` : "", mp ? "Mobility" : ""].filter(Boolean).join(" und ") + ` für ${isoToDE(state.date)} gespeichert.`);
   setTimeout(() => { if($("banner").dataset.kind === "ok") clearBanner(); }, 4000);
   sync();
 }
@@ -580,10 +616,34 @@ function renderHistory(){
     <ul>${s.items.map(l => `<li><span>${esc(l.ex)}${l.pending ? " ·  wartet" : ""}</span><span class="num">${l.sets.filter(x=>x[0]!==null).map(x=>`${fmt(x[0])}×${x[1]??"–"}`).join(" ")}</span></li>`).join("")}</ul></div>`).join("")}</div>`
     : `<div class="empty">Noch keine Einträge.</div>`;
 }
+function addDays(iso, n){ const [y,m,d] = iso.split("-").map(Number); return msISO(new Date(y, m-1, d+n).getTime()); }
+const WD = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+function setMob(v){
+  state.mobDone = v;
+  LS.set("mob:"+state.date, v);
+  const mc = $("mobCombo"); if(mc) mc.checked = v;
+  renderMobility(); refreshStatus();
+}
+function renderMobility(){
+  const set = new Set(mobDays);
+  set.delete(state.date); if(state.mobDone) set.add(state.date);
+  const days = []; for(let i=13; i>=0; i--) days.push(addDays(state.date, -i));
+  const count = days.filter(d => set.has(d)).length;
+  const strip = days.map(d => { const on = set.has(d); return `<div class="day${on ? " on" : ""}"><span>${WD[new Date(isoMs(d)).getDay()]}</span><b>${d.slice(8)}</b><span>${on ? "✓" : "–"}</span></div>`; }).join("");
+  const chip = !mobPending() ? (state.mobDone ? (outbox.some(j => j.type==="mob" && j.date===state.date) ? ["wait","Wartet"] : ["saved","Im Sheet"]) : ["","Offen"]) : ["changed","Geändert"];
+  $("mob").innerHTML = `<article class="card mob-card">
+    <div class="card-head"><div><h3>Mobility &amp; Core</h3><div class="meta">${isoToDE(state.date)} · einzeln oder zusammen mit Workout A/B</div></div><span class="chip ${chip[0]}">${chip[1]}</span></div>
+    <button class="switch" id="mobSwitch" role="switch" aria-checked="${state.mobDone}"><span class="lbl">Routine gemacht</span><span class="track" aria-hidden="true"></span></button>
+    <ul class="routine" aria-label="Übungen der Routine">${ROUTINE.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+  </article>
+  <article class="card mob-card"><div class="card-head"><h3>Letzte 14 Tage</h3><span class="meta num">${count} von 14</span></div><div class="days">${strip}</div></article>`;
+  $("mobSwitch").onclick = () => setMob(!state.mobDone);
+}
 function setTab(t){
-  const entry = t === "entry";
-  for(const n of ["entry","hist","stats"]){ $("tab-"+n).setAttribute("aria-selected", t===n); $(n).hidden = t!==n; }
-  $("savebar").hidden = !entry; $("sessionRow").hidden = !entry; $("summary").hidden = !entry;
+  const entry = t === "entry", mobT = t === "mob";
+  for(const n of ["entry","mob","hist","stats"]){ $("tab-"+n).setAttribute("aria-selected", t===n); $(n).hidden = t!==n; }
+  $("savebar").hidden = !(entry || mobT); $("sessionRow").hidden = !(entry || mobT); $("summary").hidden = !entry; $("wk").hidden = !entry;
+  if(mobT) renderMobility();
   if(t==="hist") renderHistory();
   if(t==="stats") renderStats();
   window.scrollTo(0, 0);
@@ -798,7 +858,7 @@ async function saveCfg(){
   try{
     const data = await api("load", null, next);
     cfg = next; LS.set("cfg", cfg);
-    LS.set("cache", {log: data.log, plan: data.plan});
+    LS.set("cache", {log: data.log, plan: data.plan, mob: data.mob});
     ingest(data);
     lastSync = Date.now(); LS.set("lastSync", lastSync); syncError = null;
     state.workout = pickWorkout();
@@ -818,6 +878,7 @@ function boot(){
   $("saveBtn").onclick = save;
   $("syncBtn").onclick = sync;
   $("tab-entry").onclick = () => setTab("entry");
+  $("tab-mob").onclick = () => setTab("mob");
   $("tab-hist").onclick = () => setTab("hist");
   $("tab-stats").onclick = () => setTab("stats");
   let rsz; window.addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(() => { if(!$("stats").hidden) renderStats(); }, 150); });

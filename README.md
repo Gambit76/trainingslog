@@ -28,12 +28,13 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 
 **Änderungen an `apps-script/Api.gs`** landen nicht automatisch im Sheet: Inhalt im Apps-Script-Editor in die Datei `Api` kopieren, speichern, dann **Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Version: Neue Version → Bereitstellen** (URL bleibt gleich).
 
-## Funktionen (Stand v4)
+## Funktionen (Stand v5)
 
 - **Eintragen:** Datum (heute), Workout A/B im Wechsel, Übungen aus dem Blatt „Trainingsplan“, gruppiert nach Supersätzen.
 - **Auswahlräder** für Gewicht (fest 0,5-kg-Schritte) und Wiederholungen. Vorbelegt mit dem Wert vom letzten Mal (grau). Rad öffnen und schließen übernimmt ihn, „–“ ganz oben leert, „Anderer Wert …“ ganz unten für freie Eingabe.
 - **Speichern** ist sofort lokal gesichert und wird ins Sheet übertragen, offline sobald wieder Netz da ist. Gleiches Datum + Workout + Übung überschreibt die vorhandene Zeile (auch vom Button angelegte), keine Duplikate.
 - **Verlauf:** letzte 30 Einheiten.
+- **Mobility:** Checkbox „Mobility-Routine im Anschluss gemacht“ am Ende von Workout A/B oder eigener Tab mit Schalter pro Tag und 14-Tage-Übersicht. Im Sheet als Zeile mit Workout „Mobility“, Spalte J = ✓.
 - **Statistik:** Workouts, Gesamtvolumen, letzte 4 Wochen vs. davor, Volumen pro Einheit (A/B), pro Woche/Monat, Kraftentwicklung je Übung. Volumen = Σ Gewicht × Wiederholungen (wie im Sheet-Dashboard).
 
 ## Versionen
@@ -42,3 +43,4 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v2** – Auswahlräder, Statistik-Tab
 - **v3** – Feste 0,5-kg-Schritte
 - **v4** – Räder mit Wert vom letzten Mal vorbelegt
+- **v5** – Mobility-Routine: Checkbox am Ende von Workout A/B und eigener Tab für separate Einträge (nur ob und wann, Spalte J „Gemacht“; braucht neue `Api.gs`)
