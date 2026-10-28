@@ -152,6 +152,17 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .day.on{background:var(--ok-soft);border-color:transparent;color:var(--ok)}
 .day.on b{color:var(--ok)}
 @media (prefers-reduced-motion:reduce){.switch .track::after{transition:none}}
+.figs2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.figs2 figure{margin:0;display:grid;gap:4px;background:var(--input);border:1px solid var(--line);border-radius:10px;padding:8px 6px 6px}
+.figs2 svg{width:100%;height:auto;display:block}
+.figs2 figcaption{font-size:12px;color:var(--muted);text-align:center}
+.fig{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.figs2 .pr{stroke:var(--muted);stroke-width:1.6;fill:none}
+.figs2 .pr.fill{fill:var(--line)}
+.figs2 .db{stroke:var(--accent);stroke-width:4;stroke-linecap:round}
+.tips{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.title-row .tabs{width:100%;overflow-x:auto}
+.title-row .tabs button{flex:1 1 auto;white-space:nowrap;padding:5px 6px;font-size:13px}
 .empty{margin-top:28px;padding:20px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);text-align:center}
 
 .history{margin-top:16px;display:grid;gap:8px}
@@ -204,6 +215,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
         <div class="tabs" role="tablist">
           <button id="tab-entry" role="tab" aria-selected="true">Eintragen</button>
           <button id="tab-mob" role="tab" aria-selected="false">Mobility</button>
+          <button id="tab-ex" role="tab" aria-selected="false">Übungen</button>
           <button id="tab-hist" role="tab" aria-selected="false">Verlauf</button>
           <button id="tab-stats" role="tab" aria-selected="false">Statistik</button>
         </div>
@@ -219,6 +231,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
     <div id="banner"></div>
     <main id="entry"><div class="empty">Lade dein Google Sheet …</div></main>
     <section id="mob" hidden></section>
+    <section id="ex" hidden></section>
     <section id="hist" hidden></section>
     <section id="stats" hidden></section>
     <div class="footer"><button class="linkbtn" id="openSettings">Verbindung ändern</button></div>
@@ -641,9 +654,10 @@ function renderMobility(){
 }
 function setTab(t){
   const entry = t === "entry", mobT = t === "mob";
-  for(const n of ["entry","mob","hist","stats"]){ $("tab-"+n).setAttribute("aria-selected", t===n); $(n).hidden = t!==n; }
+  for(const n of ["entry","mob","ex","hist","stats"]){ $("tab-"+n).setAttribute("aria-selected", t===n); $(n).hidden = t!==n; }
   $("savebar").hidden = !(entry || mobT); $("sessionRow").hidden = !(entry || mobT); $("summary").hidden = !entry; $("wk").hidden = !entry;
   if(mobT) renderMobility();
+  if(t==="ex") renderExercises();
   if(t==="hist") renderHistory();
   if(t==="stats") renderStats();
   window.scrollTo(0, 0);
@@ -871,6 +885,122 @@ async function saveCfg(){
   }
 }
 
+/* ---------- Übungen (Schaubilder) ---------- */
+// Strichfiguren im 120×80-Raster: head = Kopfmittelpunkt, lines = Linienzüge (Rumpf, Arme, Beine), props = Geräte als SVG.
+const mir = pts => pts.map(([x, y]) => [120 - x, y]);
+const fp = (head, lines, props) => ({head, lines, props: props || ""});
+const dbH = (x, y) => `<line class="db" x1="${x-4}" y1="${y}" x2="${x+4}" y2="${y}"/>`;
+const dbV = (x, y) => `<line class="db" x1="${x}" y1="${y-4}" x2="${x}" y2="${y+4}"/>`;
+const thin = (x1, y1, x2, y2) => `<line class="pr" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+const slab = (x, y, w, h) => `<rect class="pr fill" x="${x}" y="${y}" width="${w}" height="${h}" rx="1"/>`;
+const STAND = (arms, props) => fp([60,12], [[[60,19],[60,43]], [[50,21],[70,21]], [[60,43],[56,58],[56,74]], [[60,43],[64,58],[64,74]], ...arms], props);
+const SEATF = (arms, props) => fp([60,14], [[[60,21],[60,46]], [[50,23],[70,23]], [[60,46],[52,54],[52,74]], [[60,46],[68,54],[68,74]], ...arms], slab(46,46,28,4) + (props||""));
+const BENT = (arms, props) => fp([60,24], [[[60,30],[60,50]], [[50,31],[70,31]], [[60,50],[56,62],[56,74]], [[60,50],[64,62],[64,74]], ...arms], props);
+const QUAD = (torso, head, extra) => fp(head, [torso, [[60,46],[60,74]], [[30,46],[30,72],[14,72]], ...(extra||[])]);
+const SUP = (torso, legs, arms, head) => fp(head || [14,68], [torso, ...legs, ...(arms||[])]);
+
+const EXERCISES = [
+  {g:"Workout A", n:"Butterfly", d:"Autark 6000", l:["Auseinander","Zusammen"],
+   s: SEATF([[[50,23],[34,24],[34,10]], mir([[50,23],[34,24],[34,10]])]),
+   e: SEATF([[[50,23],[50,32],[57,18]], mir([[50,23],[50,32],[57,18]])]),
+   t:["Schulterblätter hinten fixieren, Brust raus.","Arme kontrolliert vor der Brust zusammenführen, Ellbogen bleiben vor der Schulterachse.","Langsam zurück, nicht in die Dehnung fallen lassen."]},
+  {g:"Workout A", n:"Beinstrecker", d:"Autark 6000",
+   s: fp([45,12], [[[46,20],[50,44]], [[50,44],[68,44],[68,66]], [[46,22],[52,34],[54,44]]], slab(40,44,30,4) + thin(40,18,43,46)),
+   e: fp([45,12], [[[46,20],[50,44]], [[50,44],[68,44],[92,44]], [[46,22],[52,34],[54,44]]], slab(40,44,30,4) + thin(40,18,43,46)),
+   t:["Rücken an die Lehne, Polster knapp über dem Fußgelenk.","Bein strecken, oben 1 Sekunde den Quadrizeps anspannen.","Langsam absenken, nicht auf dem Gewicht ablegen."]},
+  {g:"Workout A", n:"Latzug zur Brust", d:"Autark 6000", l:["Oben","Unten"],
+   s: fp([50,12], [[[50,20],[52,46]], [[52,46],[72,46],[72,70]], [[50,22],[56,12],[60,6]]], slab(44,46,30,4) + dbH(60,5) + thin(60,5,60,0)),
+   e: fp([50,12], [[[50,20],[52,46]], [[52,46],[72,46],[72,70]], [[50,22],[46,32],[58,25]]], slab(44,46,30,4) + dbH(58,25) + thin(58,25,60,0)),
+   t:["Stange zur oberen Brust ziehen, nie in den Nacken.","Ellbogen ziehen aktiv nach unten und hinten.","Oberkörper leicht zurück, Schultern nicht hochziehen."]},
+  {g:"Workout A", n:"Seitheben stehend", d:"Smartlock-Kurzhanteln", l:["Unten","Oben"],
+   s: STAND([[[50,21],[47,33],[47,44]], mir([[50,21],[47,33],[47,44]])], dbH(47,44) + dbH(73,44)),
+   e: STAND([[[50,21],[38,22],[27,23]], mir([[50,21],[38,22],[27,23]])], dbH(27,23) + dbH(93,23)),
+   t:["Oberkörper etwa 30° nach vorn neigen (Skapula-Ebene), schont das Schulterdach.","Arme bis maximal Schulterhöhe heben, nicht höher.","Leichtes Gewicht, kontrolliert absenken."]},
+  {g:"Workout A", n:"Bizepscurls an Bank", d:"Bizepsbank + Smartlock",
+   s: fp([44,13], [[[44,22],[46,48]], [[46,48],[64,48],[64,70]], [[46,24],[60,38],[68,50]]], slab(40,48,26,4) + thin(50,26,66,40) + dbH(68,50)),
+   e: fp([44,13], [[[44,22],[46,48]], [[46,48],[64,48],[64,70]], [[46,24],[60,38],[58,26]]], slab(40,48,26,4) + thin(50,26,66,40) + dbH(58,26)),
+   t:["Oberarme fest auf dem Polster, kein Schwung.","Hantel zur Schulter curlen, oben kurz anspannen.","Unten fast ganz strecken."]},
+  {g:"Workout A", n:"Trizepsdrücken nach unten", d:"Kabelzug Autark 6000",
+   s: fp([57,12], [[[56,20],[58,44]], [[58,44],[55,58],[55,74]], [[58,44],[62,58],[62,74]], [[57,22],[58,34],[68,27]]], thin(68,27,74,0) + dbH(68,27)),
+   e: fp([57,12], [[[56,20],[58,44]], [[58,44],[55,58],[55,74]], [[58,44],[62,58],[62,74]], [[57,22],[58,34],[66,47]]], thin(66,47,74,0) + dbH(66,47)),
+   t:["Obere Rolle nutzen, Ellbogen eng an den Rippen fixieren.","Unterarme komplett durchstrecken, unten kurz halten.","Nur der Unterarm bewegt sich."]},
+  {g:"Workout B", n:"Einarmiges KH-Rudern", d:"Flachbank + Smartlock", l:["Unten","Oben"],
+   s: fp([76,26], [[[70,28],[44,34]], [[44,34],[40,56],[38,74]], [[44,34],[50,56],[52,74]], [[68,30],[78,42],[84,54]], [[64,31],[64,46],[64,58]]], slab(76,56,30,4) + thin(80,60,80,74) + thin(102,60,102,74) + dbH(64,58)),
+   e: fp([76,26], [[[70,28],[44,34]], [[44,34],[40,56],[38,74]], [[44,34],[50,56],[52,74]], [[68,30],[78,42],[84,54]], [[64,31],[56,34],[50,40]]], slab(76,56,30,4) + thin(80,60,80,74) + thin(102,60,102,74) + dbH(50,40)),
+   t:["Mit Hand und Knie abstützen, Rücken gerade, das entlastet den unteren Rücken.","Hantel Richtung Hüfte ziehen, Schulterblatt aktiv zur Wirbelsäule führen.","Pro Seite 10–12 Wiederholungen."]},
+  {g:"Workout B", n:"KH-Bodendrücken (Floor Press)", d:"Boden + Smartlock", l:["Unten","Oben"],
+   s: SUP([[26,70],[62,70]], [[[62,70],[74,56],[80,72]]], [[[30,69],[36,73],[36,61]]], [20,68]),
+   e: SUP([[26,70],[62,70]], [[[62,70],[74,56],[80,72]]], [[[30,69],[31,57],[31,45]]], [20,68]),
+   t:["Neutraler Griff, Handflächen zeigen zueinander.","Ellbogen berühren unten sanft den Boden, der Boden stoppt die Bewegung und schützt die Schulter.","Dann ohne Schwung nach oben drücken."]},
+  {g:"Workout B", n:"Rumänisches Kreuzheben", d:"Smartlock-Kurzhanteln", l:["Stand","Unten"],
+   s: fp([59,12], [[[58,20],[56,44]], [[56,44],[58,58],[58,74]], [[58,22],[60,34],[60,46]]], dbH(60,48)),
+   e: fp([79,30], [[[72,32],[44,42]], [[44,42],[48,58],[50,74]], [[72,33],[72,48],[72,60]]], dbH(72,60)),
+   t:["Hüfte weit nach hinten schieben, Knie nur leicht gebeugt.","Rücken bleibt absolut gerade, Hanteln eng am Körper.","Dehnung im Beinbeuger spüren, dann Hüfte nach vorn strecken."]},
+  {g:"Workout B", n:"Reverse Flys", d:"Schrägbank + Smartlock", l:["Unten","Oben"],
+   s: BENT([[[50,31],[52,44],[52,56]], mir([[50,31],[52,44],[52,56]])], dbH(52,56) + dbH(68,56)),
+   e: BENT([[[50,31],[38,33],[27,35]], mir([[50,31],[38,33],[27,35]])], dbH(27,35) + dbH(93,35)),
+   t:["Bäuchlings auf der Schrägbank, Brust liegt auf (Ansicht von hinten).","Arme leicht gebeugt kontrolliert nach außen und oben führen.","Stärkt die hintere Schulter, Schulterblätter zusammenziehen."]},
+  {g:"Workout B", n:"Hammercurls stehend", d:"Smartlock-Kurzhanteln", l:["Unten","Oben"],
+   s: STAND([[[50,21],[48,33],[48,44]], mir([[50,21],[48,33],[48,44]])], dbV(48,45) + dbV(72,45)),
+   e: STAND([[[50,21],[48,33],[47,23]], mir([[50,21],[48,33],[47,23]])], dbV(47,22) + dbV(73,22)),
+   t:["Neutraler Griff, Daumen zeigt nach oben.","Ellbogen bleiben am Körper, kein Schwung aus dem Rücken.","Stärkt den Brachialis für mehr Oberarmdichte."]},
+  {g:"Workout B", n:"Trizepsdrücken vorgebeugt", d:"Kabelzug Autark 6000",
+   s: fp([72,26], [[[66,28],[44,44]], [[44,44],[46,58],[46,74]], [[44,44],[52,58],[54,74]], [[64,30],[58,40],[60,52]]], thin(60,52,82,0) + dbH(60,52)),
+   e: fp([72,26], [[[66,28],[44,44]], [[44,44],[46,58],[46,74]], [[44,44],[52,58],[54,74]], [[64,30],[58,40],[46,46]]], thin(46,46,82,0) + dbH(46,46)),
+   t:["Leicht vorgebeugt am hohen Kabelzug, Oberarm eng am Körper.","Kontrolliert nach unten-hinten ausstrecken.","Unten kurz halten, langsam zurück."]},
+  {g:"Mobility", n:"Bird-Dog", d:"Boden", l:["Vierfüßler","Strecken"],
+   s: QUAD([[60,46],[30,46]], [66,44]),
+   e: QUAD([[60,46],[30,46]], [66,44], [[[60,46],[78,44],[94,43]], [[30,46],[16,46],[2,46]]]),
+   t:["Arm und gegenüberliegendes Bein diagonal strecken.","Rücken bleibt ruhig und waagerecht, Becken kippt nicht.","25 Wiederholungen pro Seite."]},
+  {g:"Mobility", n:"Cat-Cow", d:"Boden", l:["Kuh (Hohlkreuz)","Katze (Buckel)"],
+   s: QUAD([[60,46],[46,52],[30,46]], [68,41]),
+   e: QUAD([[60,46],[46,38],[30,46]], [66,52]),
+   t:["Im Wechsel runden und leicht ins Hohlkreuz gehen.","Mobilisiert Brustwirbelsäule und Schulter, atmen nicht vergessen.","2 × 20 Sekunden, langsam."]},
+  {g:"Mobility", n:"Superman", d:"Boden", l:["Liegen","Anheben"],
+   s: SUP([[74,70],[36,70]], [[[36,70],[8,70]]], [[[74,70],[104,70]]], [80,67]),
+   e: SUP([[74,70],[36,70]], [[[36,70],[8,60]]], [[[74,70],[104,60]]], [80,63]),
+   t:["Bauchlage, Arme und Beine gleichzeitig leicht anheben.","Blick zum Boden, Nacken lang lassen.","Kräftigt die gesamte Rückseite, 50 Sekunden halten."]},
+  {g:"Mobility", n:"Glute Bridge", d:"Boden", l:["Liegen","Becken hoch"],
+   s: SUP([[22,70],[58,70]], [[[58,70],[72,56],[78,72]]], [[[24,71],[46,72]]]),
+   e: SUP([[22,70],[58,50]], [[[58,50],[72,56],[78,72]]], [[[24,71],[46,72]]]),
+   t:["Rückenlage, Füße aufgestellt.","Becken anheben, bis Schulter, Hüfte und Knie eine Linie bilden.","Gesäß oben anspannen, 50 Sekunden halten."]},
+  {g:"Mobility", n:"Glute-Stretch", d:"Boden", l:["Ausgangslage","Dehnen"],
+   s: SUP([[22,70],[56,70]], [[[56,70],[66,52],[72,72]], [[56,70],[80,60],[68,52]]], []),
+   e: SUP([[22,70],[56,70]], [[[56,70],[62,48],[76,50]], [[56,70],[80,58],[66,46]]], []),
+   t:["Knöchel auf das gegenüberliegende Knie legen.","Das untere Bein zur Brust ziehen, bis du die Dehnung im Gesäß spürst.","Ausgleich zum Graveln, 50 Sekunden pro Seite."]},
+  {g:"Mobility", n:"Crunches", d:"Boden", l:["Liegen","Hoch"],
+   s: SUP([[22,70],[56,70]], [[[56,70],[70,56],[76,72]]], [[[24,69],[16,64]]]),
+   e: SUP([[36,62],[56,70]], [[[56,70],[70,56],[76,72]]], [[[38,61],[30,56]]], [28,58]),
+   t:["Bauchmuskeln anspannen, kein Ziehen im Nacken.","Schulterblätter anheben, unten nicht ganz ablegen.","50 Wiederholungen, oben 10 Sekunden halten."]},
+  {g:"Mobility", n:"L-Sit (aufrechter Sitz)", d:"Boden", l:["Hände am Boden","Arme nach vorn"],
+   s: fp([40,36], [[[40,44],[40,70]], [[40,70],[72,70]], [[40,48],[46,62],[50,70]]]),
+   e: fp([40,36], [[[40,44],[40,70]], [[40,70],[72,70]], [[40,48],[56,50],[70,52]]]),
+   t:["Aufrecht sitzen, Beine gestreckt, Rücken gerade.","Arme frei nach vorn nehmen, ohne abzustützen.","50 Sekunden halten."]},
+  {g:"Mobility", n:"Seated Forward Fold", d:"Boden", l:["Aufrecht","Vorbeugen"],
+   s: fp([40,36], [[[40,44],[40,70]], [[40,70],[72,70]], [[40,48],[56,50],[70,52]]]),
+   e: fp([68,58], [[[62,58],[40,70]], [[40,70],[72,70]], [[62,60],[70,66],[76,70]]]),
+   t:["Beine gestreckt, mit geradem Rücken aus der Hüfte nach vorn beugen.","Hände Richtung Füße schieben, kein Rundrücken erzwingen.","Dehnt die gesamte Rückseite."]}
+];
+
+function figSVG(p, label){
+  const lines = p.lines.map(pts => `<polyline points="${pts.map(q => q.join(",")).join(" ")}"/>`).join("");
+  return `<svg viewBox="0 0 120 80" role="img" aria-label="${esc(label)}"><line class="pr" x1="0" y1="74.5" x2="120" y2="74.5"/>${p.props}<g class="fig">${lines}<circle cx="${p.head[0]}" cy="${p.head[1]}" r="5"/></g></svg>`;
+}
+function renderExercises(){
+  let html = `<p class="focus">Strichfiguren in Seiten- bzw. Frontansicht. Links Start, rechts Endposition.</p>`;
+  for(const g of ["Workout A", "Workout B", "Mobility"]){
+    html += `<div class="section-title">${g}</div><div class="group">`;
+    for(const x of EXERCISES.filter(e => e.g === g)){
+      const lab = x.l || ["Start", "Ende"];
+      html += `<article class="card"><div class="card-head"><div><h3>${esc(x.n)}</h3><div class="meta">${esc(x.d)}</div></div></div>
+        <div class="figs2"><figure>${figSVG(x.s, x.n+", "+lab[0])}<figcaption>${esc(lab[0])}</figcaption></figure><figure>${figSVG(x.e, x.n+", "+lab[1])}<figcaption>${esc(lab[1])}</figcaption></figure></div>
+        <ul class="tips">${x.t.map(t => `<li>${esc(t)}</li>`).join("")}</ul></article>`;
+    }
+    html += `</div>`;
+  }
+  $("ex").innerHTML = html;
+}
+
 /* ---------- Start ---------- */
 function boot(){
   $("date").value = state.date;
@@ -879,6 +1009,7 @@ function boot(){
   $("syncBtn").onclick = sync;
   $("tab-entry").onclick = () => setTab("entry");
   $("tab-mob").onclick = () => setTab("mob");
+  $("tab-ex").onclick = () => setTab("ex");
   $("tab-hist").onclick = () => setTab("hist");
   $("tab-stats").onclick = () => setTab("stats");
   let rsz; window.addEventListener("resize", () => { clearTimeout(rsz); rsz = setTimeout(() => { if(!$("stats").hidden) renderStats(); }, 150); });
