@@ -261,7 +261,7 @@ let lastSync = LS.get("lastSync", null);
 let log = [];                           // {date, workout, ex, sets, pending?}
 let plan = {}, workouts = [];
 let mobDays = new Set();                // Tage mit gemachter Mobility-Routine (laut Sheet + Warteschlange)
-const ROUTINE = ["Bird-Dog","Cat-Cow","Superman","Glute Bridge","Glute-Stretch","Crunches","L-Sit","Seated Forward Fold"];
+const ROUTINE = ["Bird-Dog","Cat-Cow","Superman","Glute Bridge","Glute-Stretch","Crunches","L-Sit","Seated Forward Fold","L-Sit mit Rotation"];
 let state = { date: todayISO(), dateAuto: true, workout: null, entries: {}, mobDone: false };
 let syncing = false, syncError = null;
 
@@ -492,7 +492,7 @@ function renderEntry(){
     }
     html += `</div>`;
   }
-  if(cfgW.exercises.length) html += `<article class="card mob-card"><label class="done" for="mobCombo"><input type="checkbox" id="mobCombo"${state.mobDone ? " checked" : ""}>Mobility-Routine im Anschluss gemacht</label></article>`;
+  if(cfgW.exercises.length) html += `<article class="card mob-card"><label class="done" for="mobCombo"><input type="checkbox" id="mobCombo"${state.mobDone ? " checked" : ""}>Mobility-Routine gemacht</label></article>`;
   $("entry").innerHTML = html;
   const mc = $("mobCombo");
   if(mc) mc.onchange = () => setMob(mc.checked);
@@ -979,15 +979,19 @@ const EXERCISES = [
   {g:"Mobility", n:"Seated Forward Fold", d:"Boden", l:["Aufrecht","Vorbeugen"],
    s: fp([40,36], [[[40,44],[40,70]], [[40,70],[72,70]], [[40,48],[56,50],[70,52]]]),
    e: fp([68,58], [[[62,58],[40,70]], [[40,70],[72,70]], [[62,60],[70,66],[76,70]]]),
-   t:["Beine gestreckt, mit geradem Rücken aus der Hüfte nach vorn beugen.","Hände Richtung Füße schieben, kein Rundrücken erzwingen.","Dehnt die gesamte Rückseite."]}
+   t:["Beine gestreckt, mit geradem Rücken aus der Hüfte nach vorn beugen.","Hände Richtung Füße schieben, kein Rundrücken erzwingen.","Dehnt die gesamte Rückseite."]},
+  {g:"Mobility", n:"L-Sit mit Rotation", d:"Boden", l:["Drehung links","Drehung rechts"],
+   s: Object.assign(fp([60,40], [[[42,50],[78,30]], [[52,58],[68,58]], [[52,58],[52,10]], [[68,58],[68,10]]]), {top:true}),
+   e: Object.assign(fp([60,40], [[[42,30],[78,50]], [[52,58],[68,58]], [[52,58],[52,10]], [[68,58],[68,10]]]), {top:true}),
+   t:["Aufrecht sitzen, Beine gestreckt, Rücken gerade (Draufsicht: oben ist vorn).","Oberkörper aus dem Brustkorb erst nach links drehen, zurück zur Mitte, dann nach rechts.","Hüfte bleibt ruhig, Becken dreht nicht mit. Bringt Rotation in die Wirbelsäule."]}
 ];
 
 function figSVG(p, label){
   const lines = p.lines.map(pts => `<polyline points="${pts.map(q => q.join(",")).join(" ")}"/>`).join("");
-  return `<svg viewBox="0 0 120 80" role="img" aria-label="${esc(label)}"><line class="pr" x1="0" y1="74.5" x2="120" y2="74.5"/>${p.props}<g class="fig">${lines}<circle cx="${p.head[0]}" cy="${p.head[1]}" r="5"/></g></svg>`;
+  return `<svg viewBox="0 0 120 80" role="img" aria-label="${esc(label)}">${p.top ? "" : `<line class="pr" x1="0" y1="74.5" x2="120" y2="74.5"/>`}${p.props}<g class="fig">${lines}<circle cx="${p.head[0]}" cy="${p.head[1]}" r="5"/></g></svg>`;
 }
 function renderExercises(){
-  let html = `<p class="focus">Strichfiguren in Seiten- bzw. Frontansicht. Links Start, rechts Endposition.</p>`;
+  let html = `<p class="focus">Strichfiguren in Seiten-, Front- bzw. Draufsicht. Links Start, rechts Endposition.</p>`;
   for(const g of ["Workout A", "Workout B", "Mobility"]){
     html += `<div class="section-title">${g}</div><div class="group">`;
     for(const x of EXERCISES.filter(e => e.g === g)){
