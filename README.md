@@ -28,7 +28,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 
 **Änderungen an `apps-script/Api.gs`** landen nicht automatisch im Sheet: Inhalt im Apps-Script-Editor in die Datei `Api` kopieren, speichern, dann **Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Version: Neue Version → Bereitstellen** (URL bleibt gleich).
 
-## Funktionen (Stand v7)
+## Funktionen (Stand v8)
 
 - **Eintragen:** Datum (heute), Workout A/B im Wechsel, Übungen aus dem Blatt „Trainingsplan“, gruppiert nach Supersätzen.
 - **Auswahlräder** für Gewicht (fest 0,5-kg-Schritte) und Wiederholungen. Vorbelegt mit dem Wert vom letzten Mal (grau). Rad öffnen und schließen übernimmt ihn, „–“ ganz oben leert, „Anderer Wert …“ ganz unten für freie Eingabe.
@@ -36,6 +36,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **Verlauf:** letzte 30 Einheiten.
 - **Mobility:** Checkbox „Mobility-Routine gemacht“ am Ende von Workout A/B oder eigener Tab mit Schalter pro Tag und 14-Tage-Übersicht. Im Sheet als Zeile mit Workout „Mobility“, Spalte J = ✓.
 - **Übungen:** Nachschlagewerk mit Strichfiguren (Start/Ende) und Ausführungshinweisen für alle Übungen aus Workout A, B und der Mobility-Routine. Statisch in `index.html` (`EXERCISES`), läuft offline.
+- **Display an:** Schalter oben neben „Aktualisieren“. Hält den Bildschirm in den Reitern Eintragen, Mobility und Übungen wach (Screen Wake Lock, braucht iOS 18.4 oder neuer in der installierten App). In Verlauf und Statistik schaltet sich der Bildschirm normal aus. Einstellung wird gemerkt.
 - **Statistik:** Workouts, Gesamtvolumen, letzte 4 Wochen vs. davor, Volumen pro Einheit (A/B), pro Woche/Monat, Kraftentwicklung je Übung. Volumen = Σ Gewicht × Wiederholungen (wie im Sheet-Dashboard).
 
 ## Versionen
@@ -47,3 +48,4 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v5** – Mobility-Routine: Checkbox am Ende von Workout A/B und eigener Tab für separate Einträge (nur ob und wann, Spalte J „Gemacht“; braucht neue `Api.gs`)
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
+- **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)

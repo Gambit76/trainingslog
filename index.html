@@ -64,6 +64,9 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .syncline .dot.wait{background:var(--plate-yellow)}
 .syncline .dot.err{background:var(--warn)}
 .syncline button{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:500;color:var(--ink)}
+.syncline{flex-wrap:wrap}
+.syncbtns{display:flex;gap:6px}
+.syncline button[aria-pressed="true"]{background:var(--ok-soft);color:var(--ok);border-color:transparent}
 .syncline button:disabled{opacity:.5}
 
 .banner{margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px;display:grid;gap:8px}
@@ -225,7 +228,7 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
         <div class="wk" id="wk"></div>
       </div>
       <div class="summary" id="summary"></div>
-      <div class="syncline"><span id="syncText"></span><button id="syncBtn">Aktualisieren</button></div>
+      <div class="syncline"><span id="syncText"></span><span class="syncbtns"><button id="wakeBtn" aria-pressed="true">Display an</button><button id="syncBtn">Aktualisieren</button></span></div>
     </header>
 
     <div id="banner"></div>
@@ -653,6 +656,7 @@ function renderMobility(){
   $("mobSwitch").onclick = () => setMob(!state.mobDone);
 }
 function setTab(t){
+  curTab = t; updateWake();
   const entry = t === "entry", mobT = t === "mob";
   for(const n of ["entry","mob","ex","hist","stats"]){ $("tab-"+n).setAttribute("aria-selected", t===n); $(n).hidden = t!==n; }
   $("savebar").hidden = !(entry || mobT); $("sessionRow").hidden = !(entry || mobT); $("summary").hidden = !entry; $("wk").hidden = !entry;
@@ -1005,6 +1009,36 @@ function renderExercises(){
   $("ex").innerHTML = html;
 }
 
+/* ---------- Bildschirm anlassen (Screen Wake Lock) ---------- */
+// Aktiv nur im Vordergrund und in den Reitern Eintragen, Mobility und Übungen. iOS gibt die Sperre beim Verlassen der App frei, daher wird sie bei der Rückkehr neu angefordert.
+let curTab = "entry", wakeSentinel = null, wakePref = LS.get("wake", true);
+const WAKE_TABS = ["entry", "mob", "ex"];
+function wakeSupported(){ return "wakeLock" in navigator; }
+function wantWake(){ return wakePref && wakeSupported() && document.visibilityState === "visible" && !$("app").hidden && WAKE_TABS.includes(curTab); }
+async function updateWake(){
+  if(wantWake()){
+    if(!wakeSentinel){
+      try{
+        const sent = await navigator.wakeLock.request("screen");
+        wakeSentinel = sent;
+        sent.addEventListener("release", () => { if(wakeSentinel === sent) wakeSentinel = null; renderWake(); });
+      }catch(e){ wakeSentinel = null; }
+    }
+  }else if(wakeSentinel){
+    const sent = wakeSentinel; wakeSentinel = null;
+    try{ await sent.release(); }catch(e){}
+  }
+  renderWake();
+}
+function renderWake(){
+  const b = $("wakeBtn"); if(!b) return;
+  if(!wakeSupported()){ b.disabled = true; b.textContent = "Display: nicht möglich"; b.setAttribute("aria-pressed", "false"); return; }
+  b.disabled = false;
+  b.setAttribute("aria-pressed", String(wakePref));
+  b.textContent = wakePref ? "Display an" : "Display aus";
+  b.title = wakePref ? (wakeSentinel ? "Bildschirm bleibt an, solange du hier bist" : "Aktiv in Eintragen, Mobility und Übungen") : "Bildschirm schaltet sich normal aus";
+}
+
 /* ---------- Start ---------- */
 function boot(){
   $("date").value = state.date;
@@ -1021,7 +1055,10 @@ function boot(){
   $("cfgSave").onclick = saveCfg;
   $("cfgCancel").onclick = showApp;
   window.addEventListener("online", sync);
+  $("wakeBtn").onclick = () => { wakePref = !wakePref; LS.set("wake", wakePref); updateWake(); };
+  document.addEventListener("pointerdown", () => { if(!wakeSentinel) updateWake(); }, {passive: true});
   document.addEventListener("visibilitychange", () => {
+    updateWake();
     if(document.visibilityState !== "visible" || !cfg) return;
     if(state.dateAuto && state.date !== todayISO()){
       state.date = todayISO(); $("date").value = state.date; state.workout = pickWorkout(); renderWorkoutButtons(); selectSession();
@@ -1029,8 +1066,10 @@ function boot(){
     if(outbox.length || !lastSync || Date.now() - lastSync > 60000) sync();
   });
 
+  renderWake();
   if(!cfg){ showSetup(); return; }
   showApp();
+  updateWake();
   const cache = LS.get("cache", null);
   if(cache){
     ingest(cache);
