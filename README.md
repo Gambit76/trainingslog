@@ -55,6 +55,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
+- **v13** – Feste Stufen: Bizepscurls SZ 2,5 kg, Hammercurls Smartlock 2 kg
 - **v12** – Seitheben / Reverse Flys: nächstes real verfügbares Gewicht (Smartlock 2er-Schritte + Einzelhanteln 2,5er), Kreuzheben fest SZ 2,5 kg
 - **v11** – Feste 2,5-kg-Stufe für Rum. Kreuzheben, Reverse Flys, Seitheben
 - **v10** – Gewichtsstufen fest je Gerät statt aus dem Verlauf abgeleitet
