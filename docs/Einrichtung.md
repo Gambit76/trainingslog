@@ -90,7 +90,7 @@ Fertig. Die App öffnet sich als Vollbild ohne Browser- oder Claude-Leiste.
 - **Keine Duplikate:** Gibt es für Datum + Workout + Übung schon eine Zeile, wird sie überschrieben.
 - **Aktualisieren** holt den neuesten Stand aus dem Sheet, z. B. nach Änderungen am Rechner.
 - **Verlauf** zeigt die letzten 30 Einheiten. Noch nicht übertragene Einträge sind mit „wartet“ markiert.
-- **Verbindung ändern** (unten auf der Seite) für neue URL oder neuen Schlüssel.
+- **Einstellungen** (Zahnrad oben rechts): Verbindung testen, Verbindung ändern (neue URL oder neuer Schlüssel), App-Version, App-Cache leeren & aktualisieren.
 
 Die Artifact-Version in Claude funktioniert parallel weiter. Beide schreiben in dasselbe Sheet.
 

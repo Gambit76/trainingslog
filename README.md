@@ -11,6 +11,7 @@ iPhone-Web-App (PWA) als Frontend für das Google Sheet **Trainingslog**. Läuft
 | `manifest.webmanifest`, `icons/` | Name und Icon auf dem Home-Bildschirm | GitHub Pages |
 | `apps-script/Api.gs` | Schnittstelle zum Sheet (Lesen/Schreiben) | Apps Script im Sheet, **neben** dem bestehenden `Code.gs` |
 | `docs/Einrichtung.md` | Ersteinrichtung Schritt für Schritt | – |
+| `docs/APP-STANDARD.md` | Gemeinsamer Design- und Technik-Standard der drei Apps (hell/dunkel, Einstellungen, Versionen) | – |
 
 Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in der installierten App auf dem iPhone gespeichert.
 
