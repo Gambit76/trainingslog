@@ -432,7 +432,12 @@ function lastSession(ex){ const prev = log.filter(l=>l.ex===ex && l.date<state.d
    4. Satz unter der Untergrenze → halten; bei Pyramide zurück auf die vorige Stufe;
       zweimal in Folge mit demselben Gewicht → eine Stufe zurück.
    Stufe je Gerät: Station/Kabelzug 5 kg, SZ-Stange 2,5 kg, Smartlock 2 kg, einzelne Kurzhanteln 2,5 kg. */
-const STEP_OVERRIDE = {"Rum. Kreuzheben": 2.5, "Reverse Flys": 2.5, "Seitheben stehend": 2.5}; // feste Stufe pro Übung (geht vor Geräte-Regel)
+const STEP_OVERRIDE = {"Rum. Kreuzheben": 2.5}; // feste Stufe pro Übung (geht vor Geräte-Regel); Kreuzheben = SZ-Stange
+// Leichte Hantelübungen mit Smartlock (2er-Schritte) UND Einzelhanteln (z. B. Hex 7,5 / 10 kg):
+// nächstes real verfügbares Gewicht, mindestens 1,5 kg Sprung.
+const MIXED_KH = /seitheb|reverse\s*fl/i;
+const MIXED_WEIGHTS = [...new Set([...Array.from({length: 16}, (_, i) => (i+1)*2), ...Array.from({length: 12}, (_, i) => (i+1)*2.5)])].sort((a,b)=>a-b);
+const MIXED_MIN_JUMP = 1.5;
 const STRICT_RX = /seitheb|reverse\s*fl/i;          // erst steigern, wenn 3 × Obergrenze mit gleichem Gewicht
 const SHOULDER_TIP = [
   [/seitheb/i, "Skapula-Ebene (30° nach vorne), kein Schwung."],
@@ -454,8 +459,12 @@ function stepFor(ex, device){
   return 2.5;
 }
 // Station/Kabelzug: nur volle 5-kg-Stufen. Hanteln/Stange: letztes Gewicht ± Stufe.
-function nextUp(w, step){ return step===5 ? (Math.floor(w/5+1e-9)+1)*5 : rnd(w+step); }
-function nextDown(w, step){ return Math.max(step, step===5 ? (Math.ceil(w/5-1e-9)-1)*5 : rnd(w-step)); }
+function nextUp(w, step, ex){
+  if(ex && MIXED_KH.test(ex)){ const v = MIXED_WEIGHTS.find(x => x >= w + MIXED_MIN_JUMP - 1e-9); if(v) return v; }
+  return step===5 ? (Math.floor(w/5+1e-9)+1)*5 : rnd(w+step); }
+function nextDown(w, step, ex){
+  if(ex && MIXED_KH.test(ex)){ const v = [...MIXED_WEIGHTS].reverse().find(x => x <= w - MIXED_MIN_JUMP + 1e-9); if(v) return v; }
+  return Math.max(step, step===5 ? (Math.ceil(w/5-1e-9)-1)*5 : rnd(w-step)); }
 function topSets(sets){
   const done = sets.filter(s => s[0]!==null && s[0]>0 && s[1]!==null);
   if(!done.length) return null;
@@ -475,7 +484,7 @@ function recommend(e){
   const atTop = t.reps.every(r => r >= hi), below = t.reps.some(r => r < lo);
   let w = t.top, kind = "hold", why;
   if(atTop && (!strict || t.reps.length >= 3)){
-    w = nextUp(t.top, step); kind = "up";
+    w = nextUp(t.top, step, e.name); kind = "up";
     why = `${fmt(t.top)} kg: ${repsTxt} Wdh., Obergrenze ${hi} erreicht.`;
   } else if(atTop){
     why = `${fmt(t.top)} kg erst in ${t.reps.length} von 3 Sätzen. Schulterübung: zuerst 3 × ${hi} mit gleichem Gewicht.`;
@@ -487,7 +496,7 @@ function recommend(e){
       if(ok){ w = lw; kind = "down"; why = `${fmt(t.top)} kg nur ${repsTxt} Wdh. (unter ${lo}). Erst ${fmt(lw)} kg sauber über alle 3 Sätze.`; }
       else why = `${fmt(t.top)} kg: ${repsTxt} Wdh., unter ${lo}. Gewicht halten.`;
     } else if(pt && pt.top===t.top && pt.reps.some(r => r < lo)){
-      w = nextDown(t.top, step); kind = "down";
+      w = nextDown(t.top, step, e.name); kind = "down";
       why = `Zweimal in Folge unter ${lo} Wdh. mit ${fmt(t.top)} kg. Eine Stufe zurück.`;
     } else why = `${fmt(t.top)} kg: ${repsTxt} Wdh., noch unter ${lo}. Normal nach einer Steigerung, Gewicht halten.`;
   } else {
