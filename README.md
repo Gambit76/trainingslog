@@ -38,7 +38,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
   - Gewertet werden nur die Sätze mit dem höchsten Gewicht der letzten Einheit (leichtere Sätze = Aufwärmen/Pyramide).
   - Alle diese Sätze an der Obergrenze → eine Stufe höher, als gerade Sätze. Seitheben und Reverse Flys erst, wenn alle 3 Sätze mit gleichem Gewicht an der Obergrenze lagen.
   - Im Bereich → halten. Unter der Untergrenze → halten (bei Pyramide zurück auf die vorige Stufe), zweimal in Folge → eine Stufe zurück.
-  - Stufe = kleinster bisher genutzter Gewichtsabstand der Übung, sonst Kabelzug/Station 5 kg, Hanteln 2,5 kg. Feste Stufen pro Übung über `STEP_OVERRIDE` in `index.html`.
+  - Stufe je Gerät (Spalte „Gerät“ im Trainingsplan, sonst Übungsname): Station/Kabelzug 5 kg, SZ-Stange 2,5 kg, Smartlock 2 kg, einzelne Kurzhanteln 2,5 kg. Feste Stufen pro Übung über `STEP_OVERRIDE` in `index.html`.
 - **Verlauf:** letzte 30 Einheiten.
 - **Mobility:** Checkbox „Mobility-Routine gemacht“ am Ende von Workout A/B oder eigener Tab mit Schalter pro Tag und 14-Tage-Übersicht. Im Sheet als Zeile mit Workout „Mobility“, Spalte J = ✓.
 - **Übungen:** Nachschlagewerk mit Strichfiguren (Start/Ende) und Ausführungshinweisen für alle Übungen aus Workout A, B und der Mobility-Routine. Statisch in `index.html` (`EXERCISES`), läuft offline.
@@ -55,4 +55,5 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
+- **v10** – Gewichtsstufen fest je Gerät statt aus dem Verlauf abgeleitet
 - **v9** – Automatische Empfehlung fürs nächste Training (Steigern/Halten/Zurück) mit vorbelegten Rädern
