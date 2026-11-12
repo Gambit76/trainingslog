@@ -28,11 +28,16 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 
 **Änderungen an `apps-script/Api.gs`** landen nicht automatisch im Sheet: Inhalt im Apps-Script-Editor in die Datei `Api` kopieren, speichern, dann **Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Version: Neue Version → Bereitstellen** (URL bleibt gleich).
 
-## Funktionen (Stand v8)
+## Funktionen (Stand v9)
 
 - **Eintragen:** Datum (heute), Workout A/B im Wechsel, Übungen aus dem Blatt „Trainingsplan“, gruppiert nach Supersätzen.
 - **Auswahlräder** für Gewicht (fest 0,5-kg-Schritte) und Wiederholungen. Vorbelegt mit dem Wert vom letzten Mal (grau). Rad öffnen und schließen übernimmt ihn, „–“ ganz oben leert, „Anderer Wert …“ ganz unten für freie Eingabe.
 - **Speichern** ist sofort lokal gesichert und wird ins Sheet übertragen, offline sobald wieder Netz da ist. Gleiches Datum + Workout + Übung überschreibt die vorhandene Zeile (auch vom Button angelegte), keine Duplikate.
+- **Empfehlung fürs nächste Mal (v9):** Pro Übung ein Kasten „↑ Steigern / → Halten / ↓ Zurück: 3 × X kg“ mit Begründung. Die Räder sind mit der Empfehlung vorbelegt, „Empfehlung übernehmen“ füllt alle drei Sätze. Regeln (doppelte Progression, Wdh.-Bereich aus Spalte „Wdh.“ im Trainingsplan):
+  - Gewertet werden nur die Sätze mit dem höchsten Gewicht der letzten Einheit (leichtere Sätze = Aufwärmen/Pyramide).
+  - Alle diese Sätze an der Obergrenze → eine Stufe höher, als gerade Sätze. Seitheben und Reverse Flys erst, wenn alle 3 Sätze mit gleichem Gewicht an der Obergrenze lagen.
+  - Im Bereich → halten. Unter der Untergrenze → halten (bei Pyramide zurück auf die vorige Stufe), zweimal in Folge → eine Stufe zurück.
+  - Stufe = kleinster bisher genutzter Gewichtsabstand der Übung, sonst Kabelzug/Station 5 kg, Hanteln 2,5 kg. Feste Stufen pro Übung über `STEP_OVERRIDE` in `index.html`.
 - **Verlauf:** letzte 30 Einheiten.
 - **Mobility:** Checkbox „Mobility-Routine gemacht“ am Ende von Workout A/B oder eigener Tab mit Schalter pro Tag und 14-Tage-Übersicht. Im Sheet als Zeile mit Workout „Mobility“, Spalte J = ✓.
 - **Übungen:** Nachschlagewerk mit Strichfiguren (Start/Ende) und Ausführungshinweisen für alle Übungen aus Workout A, B und der Mobility-Routine. Statisch in `index.html` (`EXERCISES`), läuft offline.
@@ -49,3 +54,4 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
+- **v9** – Automatische Empfehlung fürs nächste Training (Steigern/Halten/Zurück) mit vorbelegten Rädern
