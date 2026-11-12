@@ -432,7 +432,7 @@ function lastSession(ex){ const prev = log.filter(l=>l.ex===ex && l.date<state.d
    4. Satz unter der Untergrenze → halten; bei Pyramide zurück auf die vorige Stufe;
       zweimal in Folge mit demselben Gewicht → eine Stufe zurück.
    Stufe je Gerät: Station/Kabelzug 5 kg, SZ-Stange 2,5 kg, Smartlock 2 kg, einzelne Kurzhanteln 2,5 kg. */
-const STEP_OVERRIDE = {}; // z. B. {"Bizepscurls": 2} – feste Stufe pro Übung
+const STEP_OVERRIDE = {"Rum. Kreuzheben": 2.5, "Reverse Flys": 2.5, "Seitheben stehend": 2.5}; // feste Stufe pro Übung (geht vor Geräte-Regel)
 const STRICT_RX = /seitheb|reverse\s*fl/i;          // erst steigern, wenn 3 × Obergrenze mit gleichem Gewicht
 const SHOULDER_TIP = [
   [/seitheb/i, "Skapula-Ebene (30° nach vorne), kein Schwung."],

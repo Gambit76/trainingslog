@@ -55,5 +55,6 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
+- **v11** – Feste 2,5-kg-Stufe für Rum. Kreuzheben, Reverse Flys, Seitheben
 - **v10** – Gewichtsstufen fest je Gerät statt aus dem Verlauf abgeleitet
 - **v9** – Automatische Empfehlung fürs nächste Training (Steigern/Halten/Zurück) mit vorbelegten Rädern
