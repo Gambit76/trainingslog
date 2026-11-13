@@ -315,7 +315,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v17";
+const APP_VERSION = "v18";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -483,9 +483,9 @@ function topSets(sets){
   const top = Math.max(...done.map(s => s[0]));
   return {top, reps: done.filter(s => s[0]===top).map(s => s[1]), lighter: done.filter(s => s[0]<top)};
 }
-function recommend(e){
+function recommend(e, incToday){ // incToday: auch die heute gespeicherte Einheit zählt (Vorschau fürs nächste Mal)
   const range = repRange(e.reps);
-  const sess = log.filter(l => l.ex===e.name && l.date<state.date && hasAny(l.sets));
+  const sess = log.filter(l => l.ex===e.name && (incToday ? l.date<=state.date : l.date<state.date) && hasAny(l.sets));
   const last = sess[sess.length-1];
   if(!range || !last) return null;
   const t = topSets(last.sets);
@@ -613,6 +613,14 @@ function sparkSVG(hist){
     <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.6" fill="var(--accent)"/></svg>`;
 }
 
+// Nach dem Speichern einer vollständigen Übung (3 Sätze mit Gewicht und Wdh.) sofort zeigen, wie es beim nächsten Mal weitergeht.
+function nextHTML(e, sets){
+  const row = existingRow(e.name);
+  if(!row || !sets || !sameSets(row.sets, sets) || !row.sets.every(s => s[0]!==null && s[1]!==null)) return "";
+  const nx = recommend(e, true);
+  if(!nx) return "";
+  return `<div class="reco ${nx.kind}" style="margin-top:8px"><span class="t">Nächstes Mal ${nx.kind==="up" ? "↑ Steigern" : nx.kind==="down" ? "↓ Zurück" : "→ Halten"}: <span class="num">3 × ${fmt(nx.w)} kg</span> · Ziel ${nx.lo}–${nx.hi} Wdh.</span><span class="why">${esc(nx.why)}</span></div>`;
+}
 function renderEntry(){
   const cfgW = plan[state.workout] || {focus:"", exercises:[]};
   let html = (cfgW.focus ? `<p class="focus">${esc(state.workout)}: ${esc(cfgW.focus)}</p>` : "") + (cfgW.exercises.length ? `<p class="focus" style="margin-top:4px;font-size:13px">Graue Werte sind die Empfehlung fürs heutige Training. Rad antippen und schließen übernimmt sie.</p>` : "");
@@ -637,6 +645,7 @@ function renderEntry(){
             <span class="x">×</span>
             <div class="field">${pickerHTML(`r-${e.idx}-${s}`, e, s, 1, REPS, suggestReps(e, s, last, rc), String, ` aria-label="Satz ${s+1} Wiederholungen"`)}<span>Wdh</span></div></div>`).join("")}
         </div>
+        ${nextHTML(e, sets)}
         ${last ? `<div class="btns">${rc ? `<button class="copy" data-reco="${e.idx}">Empfehlung übernehmen</button>` : ""}<button class="copy" data-copy="${e.idx}">Werte vom ${shortDE(last.date)} übernehmen</button></div>` : ""}
       </article>`;
     }
