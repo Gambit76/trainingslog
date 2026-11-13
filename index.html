@@ -184,6 +184,14 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .hist li span:first-child{min-width:0;overflow-wrap:anywhere}
 
 .savebar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bg);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.pausebtn{width:100%;min-height:48px;margin:2px 0 14px;border:1px dashed var(--line);background:var(--surface);border-radius:10px;font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
+.pausebtn.ready{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.timerbar{max-width:640px;margin:0 auto 10px;display:flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:8px 10px}
+.timerbar.done{background:var(--ok-soft);border-color:var(--ok)}
+.timerbar .t{flex:1;font-family:var(--f-num);font-size:28px;font-weight:500;line-height:1.1}
+.timerbar .t small{display:block;font-family:var(--f-body);font-size:12px;color:var(--muted)}
+.timerbar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-height:40px;padding:0 12px;font-weight:600}
+body.hasTimer .wrap{padding-bottom:195px}
 .savebar-in{max-width:640px;margin:0 auto;display:flex;gap:12px;align-items:center}
 .savebar .status{flex:1;min-width:0;font-size:13px;color:var(--muted)}
 .save{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:12px 18px;font-family:var(--f-display);font-size:19px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;min-height:48px}
@@ -273,6 +281,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
   </div>
 
   <div class="savebar" id="savebar">
+    <div class="timerbar" id="timerbar" hidden><div class="t" id="timerTxt">1:30<small>Pause</small></div><button type="button" id="timerPlus">+30 s</button><button type="button" id="timerStop">Stopp</button></div>
     <div class="savebar-in">
       <div class="status" id="saveStatus">Noch nichts eingetragen</div>
       <button class="save" id="saveBtn" disabled>Speichern</button>
@@ -293,6 +302,12 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
       <div id="setMsg"></div>
     </section>
     <section class="setsec">
+      <h3>Pausen-Timer</h3>
+      <div class="setbtns"><label style="display:flex;align-items:center;gap:8px">Standardpause <select id="setRest" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--input);color:var(--ink)"><option value="45">45 s</option><option value="60">60 s</option><option value="75">75 s</option><option value="90">90 s</option><option value="120">120 s</option><option value="150">150 s</option><option value="180">180 s</option></select></label>
+      <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="setBeep"> Ton am Ende</label></div>
+      <p class="setnote">Der Knopf „Pause“ unter jeder Übung bzw. jedem Supersatz startet diese Zeit mit einem Tipp.</p>
+    </section>
+    <section class="setsec">
       <h3>App</h3>
       <p class="setinfo">Version <b class="num" id="setVer"></b></p>
       <div class="setbtns"><button class="secondary" id="setReload" type="button">App-Cache leeren &amp; aktualisieren</button></div>
@@ -303,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v10";
+const APP_VERSION = "v11";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -628,10 +643,11 @@ function renderEntry(){
         ${last ? `<div class="btns">${rc ? `<button class="copy" data-reco="${e.idx}">Empfehlung übernehmen</button>` : ""}<button class="copy" data-copy="${e.idx}">Werte vom ${shortDE(last.date)} übernehmen</button></div>` : ""}
       </article>`;
     }
-    html += `</div>`;
+    html += `<button type="button" class="pausebtn" data-pause data-exs="${grp.items.map(x => x.idx).join(",")}">Pause starten · ${restSec()} s</button></div>`;
   }
   if(cfgW.exercises.length) html += `<article class="card mob-card"><label class="done" for="mobCombo"><input type="checkbox" id="mobCombo"${state.mobDone ? " checked" : ""}>Mobility-Routine gemacht</label></article>`;
   $("entry").innerHTML = html;
+  $("entry").querySelectorAll("[data-pause]").forEach(b => b.onclick = () => startRest(restSec()));
   const mc = $("mobCombo");
   if(mc) mc.onchange = () => setMob(mc.checked);
   $("entry").querySelectorAll("select").forEach(sel => { sel.addEventListener("change", onPick); sel.addEventListener("blur", onPickClose); });
@@ -745,6 +761,10 @@ function refreshStatus(){
     else if(ex){ chip.className = "chip changed"; chip.textContent = "Geändert"; }
     else if(hasAny(sets)){ chip.className = "chip changed"; chip.textContent = "Neu"; }
     else { chip.className = "chip"; chip.textContent = "Offen"; }
+  });
+  document.querySelectorAll("[data-pause]").forEach(b => {
+    const ok = b.dataset.exs.split(",").every(i => { const e = exs[Number(i)], st = e && state.entries[e.name]; return st && st[2][0] !== null; });
+    b.classList.toggle("ready", ok);
   });
   const prev = log.filter(l => l.workout===state.workout && l.date<state.date && hasAny(l.sets));
   const prevDate = prev.length ? prev[prev.length-1].date : null;
@@ -1008,10 +1028,53 @@ function renderStats(){
   $("perM").onclick = () => { statPeriod = "month"; LS.set("statPeriod", statPeriod); renderStats(); };
 }
 
+/* ---------- Pausen-Timer ---------- */
+let rest = {end: 0, iv: null, done: false, hide: null}, audioCtx = null;
+function restSec(){ const v = Number(LS.get("restSec", 90)); return v > 0 ? v : 90; }
+function fmtMS(sec){ return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+function beep(){
+  if(!LS.get("restBeep", true)) return;
+  try{
+    if(!audioCtx) return;
+    [0, 0.25, 0.5].forEach(t => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+      const at = audioCtx.currentTime + t;
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.3, at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+      o.start(at); o.stop(at + 0.2);
+    });
+  }catch(e){}
+  try{ navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 200]); }catch(e){}
+}
+function showTimer(on){ $("timerbar").hidden = !on; document.body.classList.toggle("hasTimer", on); }
+function tickRest(){
+  if(!rest.end) return;
+  const left = Math.ceil((rest.end - Date.now()) / 1000);
+  const bar = $("timerbar");
+  if(left > 0){ bar.classList.remove("done"); $("timerTxt").innerHTML = fmtMS(left) + "<small>Pause</small>"; return; }
+  clearInterval(rest.iv); rest.iv = null;
+  if(!rest.done){ rest.done = true; beep(); rest.hide = setTimeout(stopRest, 20000); }
+  bar.classList.add("done"); $("timerTxt").innerHTML = "Weiter!<small>Pause vorbei</small>";
+}
+function startRest(sec){
+  try{ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === "suspended") audioCtx.resume(); }catch(e){}
+  clearInterval(rest.iv); clearTimeout(rest.hide);
+  rest.end = Date.now() + sec * 1000; rest.done = false;
+  showTimer(true); tickRest();
+  rest.iv = setInterval(tickRest, 250);
+}
+function stopRest(){ clearInterval(rest.iv); clearTimeout(rest.hide); rest.iv = null; rest.end = 0; rest.done = false; showTimer(false); }
+function plusRest(){
+  if(!rest.end) return;
+  if(rest.done){ startRest(30); return; }
+  rest.end += 30000; tickRest();
+}
+
 /* ---------- Einstellungen (App-Standard) ---------- */
 function setMsg(kind, text){ $("setMsg").innerHTML = text ? `<div class="banner ${kind}"><div>${esc(text)}</div></div>` : ""; }
 function openSettings(){
   $("setVer").textContent = APP_VERSION;
+  $("setRest").value = String(restSec()); $("setBeep").checked = LS.get("restBeep", true);
   $("setConn").textContent = $("syncText").textContent.trim() || "Verbunden";
   setMsg(); $("settings").showModal();
 }
@@ -1037,6 +1100,10 @@ function initSettings(){
   $("setTest").onclick = testConnection;
   $("setChange").onclick = () => { $("settings").close(); showSetup(); };
   $("setReload").onclick = clearCacheAndReload;
+  $("setRest").onchange = () => { LS.set("restSec", Number($("setRest").value)); document.querySelectorAll("[data-pause]").forEach(b => b.textContent = "Pause starten · " + restSec() + " s"); };
+  $("setBeep").onchange = () => LS.set("restBeep", $("setBeep").checked);
+  $("timerStop").onclick = stopRest;
+  $("timerPlus").onclick = plusRest;
 }
 
 /* ---------- Einrichtung ---------- */
@@ -1238,6 +1305,7 @@ function boot(){
   $("wakeBtn").onclick = () => { wakePref = !wakePref; LS.set("wake", wakePref); updateWake(); };
   document.addEventListener("pointerdown", () => { if(!wakeSentinel) updateWake(); }, {passive: true});
   document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible") tickRest();
     updateWake();
     if(document.visibilityState !== "visible" || !cfg) return;
     if(state.dateAuto && state.date !== todayISO()){

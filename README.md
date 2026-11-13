@@ -61,3 +61,4 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v11** – Feste 2,5-kg-Stufe für Rum. Kreuzheben, Reverse Flys, Seitheben
 - **v10** – Gewichtsstufen fest je Gerät statt aus dem Verlauf abgeleitet
 - **v9** – Automatische Empfehlung fürs nächste Training (Steigern/Halten/Zurück) mit vorbelegten Rädern
+- **v11** – Pausen-Timer: Knopf „Pause starten“ unter jeder Übung bzw. jedem Supersatz (färbt sich, sobald Satz 3 eingetragen ist), Countdown-Leiste mit +30 s und Stopp, Standardpause und Ton in den Einstellungen
