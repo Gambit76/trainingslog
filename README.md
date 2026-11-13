@@ -55,7 +55,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
-- **v15** – Pausen-Timer: Knopf „Pause starten“ unter jeder Übung bzw. jedem Supersatz (färbt sich, sobald Satz 3 eingetragen ist), Countdown-Leiste mit +30 s und Stopp, Standardpause und Ton in den Einstellungen
+- **v16** – Pausen-Timer fest oben in der Kopfzeile neben Datum und Workout (immer sichtbar, ein Tipp startet die Standardpause, +30 s und Stopp während des Laufs); Standardpause und Ton in den Einstellungen
 - **v14** – Seitheben: Hinweise klarer (Oberkörper aufrecht, Arme in der Skapula-Ebene als V, Daumen oben)
 - **v13** – Feste Stufen: Bizepscurls SZ 2,5 kg, Hammercurls Smartlock 2 kg
 - **v12** – Seitheben / Reverse Flys: nächstes real verfügbares Gewicht (Smartlock 2er-Schritte + Einzelhanteln 2,5er), Kreuzheben fest SZ 2,5 kg

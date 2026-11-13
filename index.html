@@ -184,14 +184,11 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .hist li span:first-child{min-width:0;overflow-wrap:anywhere}
 
 .savebar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bg);border-top:1px solid var(--line);padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-.pausebtn{width:100%;min-height:48px;margin:2px 0 14px;border:1px dashed var(--line);background:var(--surface);border-radius:10px;font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
-.pausebtn.ready{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
-.timerbar{max-width:640px;margin:0 auto 10px;display:flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:8px 10px}
-.timerbar.done{background:var(--ok-soft);border-color:var(--ok)}
-.timerbar .t{flex:1;font-family:var(--f-num);font-size:28px;font-weight:500;line-height:1.1}
-.timerbar .t small{display:block;font-family:var(--f-body);font-size:12px;color:var(--muted)}
-.timerbar button{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-height:40px;padding:0 12px;font-weight:600}
-body.hasTimer .wrap{padding-bottom:195px}
+.rest{display:flex;gap:4px;align-items:center;margin-left:auto}
+.rest button{border:1px solid var(--line);background:var(--surface);border-radius:8px;min-height:40px;padding:0 10px;font-weight:600;font-size:14px}
+.rest #restBtn{font-family:var(--f-num);min-width:84px;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.rest #restBtn.done{border-color:var(--ok);background:var(--ok-soft);color:var(--ok)}
+.rest #restBtn.run{font-size:17px}
 .savebar-in{max-width:640px;margin:0 auto;display:flex;gap:12px;align-items:center}
 .savebar .status{flex:1;min-width:0;font-size:13px;color:var(--muted)}
 .save{border:0;background:var(--accent);color:var(--accent-ink);border-radius:10px;padding:12px 18px;font-family:var(--f-display);font-size:19px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;min-height:48px}
@@ -267,6 +264,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
       <div class="session" id="sessionRow">
         <input type="date" id="date" aria-label="Datum">
         <div class="wk" id="wk"></div>
+        <div class="rest" id="rest"><button type="button" id="restBtn" aria-label="Pausen-Timer starten">Pause</button><button type="button" id="restPlus" hidden aria-label="30 Sekunden länger">+30</button><button type="button" id="restStop" hidden aria-label="Timer stoppen">✕</button></div>
       </div>
       <div class="summary" id="summary"></div>
       <div class="syncline"><span id="syncText"></span><span class="syncbtns"><button id="wakeBtn" aria-pressed="true">Display an</button><button id="syncBtn">Aktualisieren</button></span></div>
@@ -281,7 +279,6 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
   </div>
 
   <div class="savebar" id="savebar">
-    <div class="timerbar" id="timerbar" hidden><div class="t" id="timerTxt">1:30<small>Pause</small></div><button type="button" id="timerPlus">+30 s</button><button type="button" id="timerStop">Stopp</button></div>
     <div class="savebar-in">
       <div class="status" id="saveStatus">Noch nichts eingetragen</div>
       <button class="save" id="saveBtn" disabled>Speichern</button>
@@ -305,7 +302,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
       <h3>Pausen-Timer</h3>
       <div class="setbtns"><label style="display:flex;align-items:center;gap:8px">Standardpause <select id="setRest" style="font-size:16px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--input);color:var(--ink)"><option value="45">45 s</option><option value="60">60 s</option><option value="75">75 s</option><option value="90">90 s</option><option value="120">120 s</option><option value="150">150 s</option><option value="180">180 s</option></select></label>
       <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="setBeep"> Ton am Ende</label></div>
-      <p class="setnote">Der Knopf „Pause“ unter jeder Übung bzw. jedem Supersatz startet diese Zeit mit einem Tipp.</p>
+      <p class="setnote">Der Knopf „Pause“ oben neben dem Workout startet diese Zeit mit einem Tipp und bleibt beim Scrollen sichtbar.</p>
     </section>
     <section class="setsec">
       <h3>App</h3>
@@ -318,7 +315,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v15";
+const APP_VERSION = "v16";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -643,11 +640,10 @@ function renderEntry(){
         ${last ? `<div class="btns">${rc ? `<button class="copy" data-reco="${e.idx}">Empfehlung übernehmen</button>` : ""}<button class="copy" data-copy="${e.idx}">Werte vom ${shortDE(last.date)} übernehmen</button></div>` : ""}
       </article>`;
     }
-    html += `<button type="button" class="pausebtn" data-pause data-exs="${grp.items.map(x => x.idx).join(",")}">Pause starten · ${restSec()} s</button></div>`;
+    html += `</div>`;
   }
   if(cfgW.exercises.length) html += `<article class="card mob-card"><label class="done" for="mobCombo"><input type="checkbox" id="mobCombo"${state.mobDone ? " checked" : ""}>Mobility-Routine gemacht</label></article>`;
   $("entry").innerHTML = html;
-  $("entry").querySelectorAll("[data-pause]").forEach(b => b.onclick = () => startRest(restSec()));
   const mc = $("mobCombo");
   if(mc) mc.onchange = () => setMob(mc.checked);
   $("entry").querySelectorAll("select").forEach(sel => { sel.addEventListener("change", onPick); sel.addEventListener("blur", onPickClose); });
@@ -761,10 +757,6 @@ function refreshStatus(){
     else if(ex){ chip.className = "chip changed"; chip.textContent = "Geändert"; }
     else if(hasAny(sets)){ chip.className = "chip changed"; chip.textContent = "Neu"; }
     else { chip.className = "chip"; chip.textContent = "Offen"; }
-  });
-  document.querySelectorAll("[data-pause]").forEach(b => {
-    const ok = b.dataset.exs.split(",").every(i => { const e = exs[Number(i)], st = e && state.entries[e.name]; return st && st[2][0] !== null; });
-    b.classList.toggle("ready", ok);
   });
   const prev = log.filter(l => l.workout===state.workout && l.date<state.date && hasAny(l.sets));
   const prevDate = prev.length ? prev[prev.length-1].date : null;
@@ -1046,24 +1038,30 @@ function beep(){
   }catch(e){}
   try{ navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 200]); }catch(e){}
 }
-function showTimer(on){ $("timerbar").hidden = !on; document.body.classList.toggle("hasTimer", on); }
+function paintRest(){
+  const btn = $("restBtn"), run = rest.end > 0;
+  $("restPlus").hidden = !run; $("restStop").hidden = !run;
+  btn.classList.toggle("run", run && !rest.done);
+  if(!run){ btn.className = ""; btn.textContent = "Pause " + fmtMS(restSec()); btn.setAttribute("aria-label", "Pausen-Timer starten"); return; }
+  const left = Math.ceil((rest.end - Date.now()) / 1000);
+  btn.classList.toggle("done", left <= 0);
+  btn.textContent = left > 0 ? fmtMS(left) : "Weiter!";
+  btn.setAttribute("aria-label", left > 0 ? "Pause läuft, noch " + left + " Sekunden. Tippen für Neustart" : "Pause vorbei");
+}
 function tickRest(){
   if(!rest.end) return;
   const left = Math.ceil((rest.end - Date.now()) / 1000);
-  const bar = $("timerbar");
-  if(left > 0){ bar.classList.remove("done"); $("timerTxt").innerHTML = fmtMS(left) + "<small>Pause</small>"; return; }
-  clearInterval(rest.iv); rest.iv = null;
-  if(!rest.done){ rest.done = true; beep(); rest.hide = setTimeout(stopRest, 20000); }
-  bar.classList.add("done"); $("timerTxt").innerHTML = "Weiter!<small>Pause vorbei</small>";
+  if(left <= 0 && !rest.done){ clearInterval(rest.iv); rest.iv = null; rest.done = true; beep(); rest.hide = setTimeout(stopRest, 20000); }
+  paintRest();
 }
 function startRest(sec){
   try{ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === "suspended") audioCtx.resume(); }catch(e){}
   clearInterval(rest.iv); clearTimeout(rest.hide);
   rest.end = Date.now() + sec * 1000; rest.done = false;
-  showTimer(true); tickRest();
+  tickRest();
   rest.iv = setInterval(tickRest, 250);
 }
-function stopRest(){ clearInterval(rest.iv); clearTimeout(rest.hide); rest.iv = null; rest.end = 0; rest.done = false; showTimer(false); }
+function stopRest(){ clearInterval(rest.iv); clearTimeout(rest.hide); rest.iv = null; rest.end = 0; rest.done = false; paintRest(); }
 function plusRest(){
   if(!rest.end) return;
   if(rest.done){ startRest(30); return; }
@@ -1100,10 +1098,12 @@ function initSettings(){
   $("setTest").onclick = testConnection;
   $("setChange").onclick = () => { $("settings").close(); showSetup(); };
   $("setReload").onclick = clearCacheAndReload;
-  $("setRest").onchange = () => { LS.set("restSec", Number($("setRest").value)); document.querySelectorAll("[data-pause]").forEach(b => b.textContent = "Pause starten · " + restSec() + " s"); };
+  $("setRest").onchange = () => { LS.set("restSec", Number($("setRest").value)); paintRest(); };
   $("setBeep").onchange = () => LS.set("restBeep", $("setBeep").checked);
-  $("timerStop").onclick = stopRest;
-  $("timerPlus").onclick = plusRest;
+  $("restBtn").onclick = () => startRest(restSec());
+  $("restStop").onclick = stopRest;
+  $("restPlus").onclick = plusRest;
+  paintRest();
 }
 
 /* ---------- Einrichtung ---------- */
