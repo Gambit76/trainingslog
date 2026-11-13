@@ -440,7 +440,7 @@ const MIXED_WEIGHTS = [...new Set([...Array.from({length: 16}, (_, i) => (i+1)*2
 const MIXED_MIN_JUMP = 1.5;
 const STRICT_RX = /seitheb|reverse\s*fl/i;          // erst steigern, wenn 3 × Obergrenze mit gleichem Gewicht
 const SHOULDER_TIP = [
-  [/seitheb/i, "Skapula-Ebene (30° nach vorne), kein Schwung."],
+  [/seitheb/i, "Oberkörper aufrecht. Arme schräg nach vorn-außen (V statt T, ca. 30° vor der Seitlinie), Daumen oben, kein Schwung."],
   [/reverse\s*fl/i, "Schulterblätter aktiv zusammen, Schultern weg von den Ohren."],
   [/floor\s*press|bodendr/i, "Hanteln per Sit-back an die Brust rollen. Wird das Setup zu schwer: Gewicht halten, 3 Sek. ablassen + 1 Sek. Pause am Boden."]
 ];
@@ -1099,7 +1099,7 @@ const EXERCISES = [
   {g:"Workout A", n:"Seitheben stehend", d:"Smartlock-Kurzhanteln", l:["Unten","Oben"],
    s: STAND([[[50,21],[47,33],[47,44]], mir([[50,21],[47,33],[47,44]])], dbH(47,44) + dbH(73,44)),
    e: STAND([[[50,21],[38,22],[27,23]], mir([[50,21],[38,22],[27,23]])], dbH(27,23) + dbH(93,23)),
-   t:["Oberkörper etwa 30° nach vorn neigen (Skapula-Ebene), schont das Schulterdach.","Arme bis maximal Schulterhöhe heben, nicht höher.","Leichtes Gewicht, kontrolliert absenken."]},
+   t:["Oberkörper aufrecht, nicht vorbeugen.","Arme schräg nach vorn-außen heben (von oben gesehen ein V, nicht ein T): ca. 30° vor der Körperseite. Das ist die Skapula-Ebene und schont das Schulterdach.","Griff neutral wie beim Hammer-Curl, Daumen zeigt nach oben/vorn, nie Daumen nach unten.","Bis maximal Schulterhöhe heben, nicht höher. Leichtes Gewicht, kontrolliert absenken."]},
   {g:"Workout A", n:"Bizepscurls an Bank", d:"Bizepsbank + Smartlock",
    s: fp([44,13], [[[44,22],[46,48]], [[46,48],[64,48],[64,70]], [[46,24],[60,38],[68,50]]], slab(40,48,26,4) + thin(50,26,66,40) + dbH(68,50)),
    e: fp([44,13], [[[44,22],[46,48]], [[46,48],[64,48],[64,70]], [[46,24],[60,38],[58,26]]], slab(40,48,26,4) + thin(50,26,66,40) + dbH(58,26)),
