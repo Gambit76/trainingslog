@@ -55,6 +55,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
+- **v19** – „Fürs nächste Training“ dezent: gestrichelter Rahmen, grau, ohne Ampelfarben (klar getrennt von der Empfehlung für heute)
 - **v18** – Nach dem Speichern zeigt jede vollständige Übung („Nächstes Mal“) sofort die Empfehlung fürs nächste Training, auch am selben Tag
 - **v17** – Timer ohne „+30“; „Display an“ hält den Bildschirm auch ohne Fingertipp wach (stummes Unsichtbar-Video als Fallback zur Wake-Lock-API)
 - **v16** – Pausen-Timer fest oben in der Kopfzeile neben Datum und Workout (immer sichtbar, ein Tipp startet die Standardpause, +30 s und Stopp während des Laufs); Standardpause und Ton in den Einstellungen

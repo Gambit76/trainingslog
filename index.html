@@ -97,6 +97,9 @@ header.bar{position:sticky;top:0;z-index:5;background:var(--bg);padding-top:calc
 .reco.up .t{color:var(--ok)} .reco.up{background:var(--ok-soft)}
 .reco.down .t{color:var(--warn)} .reco.down{background:var(--warn-soft)}
 .reco .why,.reco .tip2{color:var(--muted)}
+.nextbox{display:grid;gap:2px;margin-top:8px;padding:7px 10px;border:1px dashed var(--line);border-radius:8px;background:transparent;font-size:12px;color:var(--muted)}
+.nextbox .t{color:var(--muted)}
+.nextbox .num{font-family:var(--f-num);color:var(--ink)}
 .btns{display:flex;flex-wrap:wrap;gap:4px 18px}
 .sets{display:grid;gap:6px}
 .set{display:grid;grid-template-columns:52px 1fr 14px 1fr;align-items:center;gap:8px}
@@ -315,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v18";
+const APP_VERSION = "v19";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -619,7 +622,7 @@ function nextHTML(e, sets){
   if(!row || !sets || !sameSets(row.sets, sets) || !row.sets.every(s => s[0]!==null && s[1]!==null)) return "";
   const nx = recommend(e, true);
   if(!nx) return "";
-  return `<div class="reco ${nx.kind}" style="margin-top:8px"><span class="t">Nächstes Mal ${nx.kind==="up" ? "↑ Steigern" : nx.kind==="down" ? "↓ Zurück" : "→ Halten"}: <span class="num">3 × ${fmt(nx.w)} kg</span> · Ziel ${nx.lo}–${nx.hi} Wdh.</span><span class="why">${esc(nx.why)}</span></div>`;
+  return `<div class="nextbox"><span class="t">Fürs nächste Training: ${nx.kind==="up" ? "↑ steigern" : nx.kind==="down" ? "↓ zurück" : "→ halten"} auf <span class="num">3 × ${fmt(nx.w)} kg</span> · Ziel ${nx.lo}–${nx.hi} Wdh.</span><span class="why">${esc(nx.why)}</span></div>`;
 }
 function renderEntry(){
   const cfgW = plan[state.workout] || {focus:"", exercises:[]};
