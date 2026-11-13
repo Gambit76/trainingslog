@@ -264,7 +264,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
       <div class="session" id="sessionRow">
         <input type="date" id="date" aria-label="Datum">
         <div class="wk" id="wk"></div>
-        <div class="rest" id="rest"><button type="button" id="restBtn" aria-label="Pausen-Timer starten">Pause</button><button type="button" id="restPlus" hidden aria-label="30 Sekunden länger">+30</button><button type="button" id="restStop" hidden aria-label="Timer stoppen">✕</button></div>
+        <div class="rest" id="rest"><button type="button" id="restBtn" aria-label="Pausen-Timer starten">Pause</button><button type="button" id="restStop" hidden aria-label="Timer stoppen">✕</button></div>
       </div>
       <div class="summary" id="summary"></div>
       <div class="syncline"><span id="syncText"></span><span class="syncbtns"><button id="wakeBtn" aria-pressed="true">Display an</button><button id="syncBtn">Aktualisieren</button></span></div>
@@ -315,7 +315,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v16";
+const APP_VERSION = "v17";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -1040,7 +1040,7 @@ function beep(){
 }
 function paintRest(){
   const btn = $("restBtn"), run = rest.end > 0;
-  $("restPlus").hidden = !run; $("restStop").hidden = !run;
+  $("restStop").hidden = !run;
   btn.classList.toggle("run", run && !rest.done);
   if(!run){ btn.className = ""; btn.textContent = "Pause " + fmtMS(restSec()); btn.setAttribute("aria-label", "Pausen-Timer starten"); return; }
   const left = Math.ceil((rest.end - Date.now()) / 1000);
@@ -1062,11 +1062,6 @@ function startRest(sec){
   rest.iv = setInterval(tickRest, 250);
 }
 function stopRest(){ clearInterval(rest.iv); clearTimeout(rest.hide); rest.iv = null; rest.end = 0; rest.done = false; paintRest(); }
-function plusRest(){
-  if(!rest.end) return;
-  if(rest.done){ startRest(30); return; }
-  rest.end += 30000; tickRest();
-}
 
 /* ---------- Einstellungen (App-Standard) ---------- */
 function setMsg(kind, text){ $("setMsg").innerHTML = text ? `<div class="banner ${kind}"><div>${esc(text)}</div></div>` : ""; }
@@ -1102,7 +1097,6 @@ function initSettings(){
   $("setBeep").onchange = () => LS.set("restBeep", $("setBeep").checked);
   $("restBtn").onclick = () => startRest(restSec());
   $("restStop").onclick = stopRest;
-  $("restPlus").onclick = plusRest;
   paintRest();
 }
 
@@ -1260,20 +1254,37 @@ function renderExercises(){
 // Aktiv nur im Vordergrund und in den Reitern Eintragen, Mobility und Übungen. iOS gibt die Sperre beim Verlassen der App frei, daher wird sie bei der Rückkehr neu angefordert.
 let curTab = "entry", wakeSentinel = null, wakePref = LS.get("wake", true);
 const WAKE_TABS = ["entry", "mob", "ex"];
-function wakeSupported(){ return "wakeLock" in navigator; }
-function wantWake(){ return wakePref && wakeSupported() && document.visibilityState === "visible" && !$("app").hidden && WAKE_TABS.includes(curTab); }
+function wakeSupported(){ return true; }
+// Fallback ohne Wake-Lock-API bzw. ohne Fingertipp: stummes, unsichtbares Endlos-Video hält iOS wach.
+let wakeVideo = null;
+const NOSLEEP_SRC = "data:video/mp4;base64,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";
+function startWakeVideo(){
+  try{
+    if(!wakeVideo){
+      const v = document.createElement("video");
+      v.muted = true; v.loop = true; v.playsInline = true; v.setAttribute("playsinline", ""); v.setAttribute("muted", ""); v.setAttribute("aria-hidden", "true");
+      v.style.cssText = "position:fixed;left:0;bottom:0;width:2px;height:2px;opacity:.01;pointer-events:none";
+      v.src = NOSLEEP_SRC; document.body.appendChild(v); wakeVideo = v;
+    }
+    if(wakeVideo.paused){ const pr = wakeVideo.play(); if(pr && pr.catch) pr.catch(() => {}); }
+  }catch(e){}
+}
+function stopWakeVideo(){ try{ if(wakeVideo && !wakeVideo.paused) wakeVideo.pause(); }catch(e){} }
+function wakeActive(){ return !!wakeSentinel || !!(wakeVideo && !wakeVideo.paused); }
+function wantWake(){ return wakePref && document.visibilityState === "visible" && !$("app").hidden && WAKE_TABS.includes(curTab); }
 async function updateWake(){
   if(wantWake()){
-    if(!wakeSentinel){
+    if(!wakeSentinel && "wakeLock" in navigator){
       try{
         const sent = await navigator.wakeLock.request("screen");
         wakeSentinel = sent;
-        sent.addEventListener("release", () => { if(wakeSentinel === sent) wakeSentinel = null; renderWake(); });
+        sent.addEventListener("release", () => { if(wakeSentinel === sent) { wakeSentinel = null; updateWake(); } });
       }catch(e){ wakeSentinel = null; }
     }
-  }else if(wakeSentinel){
-    const sent = wakeSentinel; wakeSentinel = null;
-    try{ await sent.release(); }catch(e){}
+    if(wakeSentinel) stopWakeVideo(); else startWakeVideo();
+  }else{
+    if(wakeSentinel){ const sent = wakeSentinel; wakeSentinel = null; try{ await sent.release(); }catch(e){} }
+    stopWakeVideo();
   }
   renderWake();
 }
@@ -1283,7 +1294,7 @@ function renderWake(){
   b.disabled = false;
   b.setAttribute("aria-pressed", String(wakePref));
   b.textContent = wakePref ? "Display an" : "Display aus";
-  b.title = wakePref ? (wakeSentinel ? "Bildschirm bleibt an, solange du hier bist" : "Aktiv in Eintragen, Mobility und Übungen") : "Bildschirm schaltet sich normal aus";
+  b.title = wakePref ? (wakeActive() ? "Bildschirm bleibt an, solange du hier bist" : "Aktiv in Eintragen, Mobility und Übungen") : "Bildschirm schaltet sich normal aus";
 }
 
 /* ---------- Start ---------- */
@@ -1304,6 +1315,9 @@ function boot(){
   window.addEventListener("online", sync);
   $("wakeBtn").onclick = () => { wakePref = !wakePref; LS.set("wake", wakePref); updateWake(); };
   document.addEventListener("pointerdown", () => { if(!wakeSentinel) updateWake(); }, {passive: true});
+  document.addEventListener("touchstart", () => { if(!wakeSentinel) updateWake(); }, {passive: true});
+  window.addEventListener("pageshow", updateWake);
+  window.addEventListener("focus", updateWake);
   document.addEventListener("visibilitychange", () => {
     if(document.visibilityState === "visible") tickRest();
     updateWake();
