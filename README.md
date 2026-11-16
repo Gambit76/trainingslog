@@ -44,7 +44,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **Mobility:** Checkbox „Mobility-Routine gemacht“ am Ende von Workout A/B oder eigener Tab mit Schalter pro Tag und 14-Tage-Übersicht. Im Sheet als Zeile mit Workout „Mobility“, Spalte J = ✓.
 - **Übungen:** Nachschlagewerk mit Strichfiguren (Start/Ende) und Ausführungshinweisen für alle Übungen aus Workout A, B und der Mobility-Routine. Statisch in `index.html` (`EXERCISES`), läuft offline.
 - **Display an:** Schalter oben neben „Aktualisieren“. Hält den Bildschirm in den Reitern Eintragen, Mobility und Übungen wach (Screen Wake Lock, braucht iOS 18.4 oder neuer in der installierten App). In Verlauf und Statistik schaltet sich der Bildschirm normal aus. Einstellung wird gemerkt.
-- **Statistik:** Workouts, Gesamtvolumen, letzte 4 Wochen vs. davor, Volumen pro Einheit (A/B), pro Woche/Monat, Kraftentwicklung je Übung. Volumen = Σ Gewicht × Wiederholungen (wie im Sheet-Dashboard).
+- **Statistik:** Workouts, Gesamtvolumen, letzte 4 Wochen vs. davor, Volumen pro Einheit (A/B), pro Woche/Monat, Kraftentwicklung je Übung als geschätztes Max (Epley: Gewicht × (1 + Wdh./30), Wdh. über 12 zählen nicht mit, bester Satz je Einheit) plus Top-Gewicht, ganz oben. Volumen = Σ Gewicht × Wiederholungen (wie im Sheet-Dashboard) steht darunter als Nebenwert.
 
 ## Versionen
 
@@ -56,6 +56,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
+- **v21** – Statistik: Kraftentwicklung zeigt das geschätzte Max (Epley) statt nur das schwerste Gewicht und steht vor dem Volumen; Volumen als Nebenwert gekennzeichnet
 - **v20** – Empfehlung nach Treppen-Progression: pro Runde statt alle drei Sätze auf einmal (Steigern: zuerst nur Runde 3; Zurück: nur die durchgefallene Runde); „Einmal unter der Untergrenze = halten, zweimal = zurück“ entfällt
 - **v19** – „Fürs nächste Training“ dezent: gestrichelter Rahmen, grau, ohne Ampelfarben (klar getrennt von der Empfehlung für heute)
 - **v18** – Nach dem Speichern zeigt jede vollständige Übung („Nächstes Mal“) sofort die Empfehlung fürs nächste Training, auch am selben Tag

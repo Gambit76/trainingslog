@@ -318,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v20";
+const APP_VERSION = "v21";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -1001,10 +1001,17 @@ function renderStats(){
   const order = [];
   for(const w of workouts) for(const e of (plan[w]||{exercises:[]}).exercises) if(!order.includes(e.name)) order.push(e.name);
   for(const l of log) if(hasAny(l.sets) && !order.includes(l.ex)) order.push(l.ex);
+  // Geschätztes Max (Epley: Gewicht × (1 + min(Wdh., 12)/30)), bester Satz je Einheit. Gewichtssprünge mit weniger Wdh. zählen so als Fortschritt.
   const strength = order.map(ex => {
     const byDate = new Map();
-    for(const l of log){ if(l.ex !== ex || !hasAny(l.sets)) continue; const mx = Math.max(...l.sets.map(s=>s[0]??0)); if(mx > 0) byDate.set(l.date, Math.max(byDate.get(l.date)||0, mx)); }
-    const pts = [...byDate.entries()].sort((a,b)=>a[0]<b[0]?-1:1).map(([d,y]) => ({x: isoMs(d), y}));
+    for(const l of log){
+      if(l.ex !== ex || !hasAny(l.sets)) continue;
+      let best = 0, top = 0;
+      for(const [w, r] of l.sets) if(w > 0 && r > 0){ best = Math.max(best, w*(1+Math.min(r, 12)/30)); top = Math.max(top, w); }
+      const o = byDate.get(l.date);
+      if(best > 0 && (!o || best > o.y)) byDate.set(l.date, {y: Math.round(best*10)/10, top});
+    }
+    const pts = [...byDate.entries()].sort((a,b)=>a[0]<b[0]?-1:1).map(([d,o]) => ({x: isoMs(d), y: o.y, top: o.top}));
     return {ex, pts, inPlan: workouts.some(w => (plan[w]||{exercises:[]}).exercises.some(e => e.name===ex))};
   }).filter(s => s.pts.length);
 
@@ -1016,9 +1023,16 @@ function renderStats(){
       <div class="tile"><span class="k">Gesamt&shy;volumen</span><span class="v num">${fmtNum(total/1000, 1)}<small>t</small></span><span class="d">seit ${shortDE(ss[0].date)}</span></div>
       <div class="tile"><span class="k">Letzte 4 Wo.</span><span class="v num">${fmtNum(last28/1000, 1)}<small>t</small></span><span class="d ${delta===null ? "" : delta >= 0 ? "up" : "down"}">${delta===null ? "kein Vergleich" : (delta >= 0 ? "▲ +" : "▼ ")+delta+" % ggü. davor"}</span></div>
     </div>
+    <div class="section-title">Kraftentwicklung <span>Geschätztes Max je Einheit, kg</span></div>
+    <div class="sub" style="margin:-4px 0 10px">Bester Satz nach Epley: Gewicht × (1 + Wdh./30). Mehr Gewicht bei weniger Wiederholungen zählt als Fortschritt, nicht als Rückschritt. Wiederholungen über 12 zählen nicht mit, weil die Schätzung dort ungenau wird.</div>
+    <div class="multiples">${strength.map((s,i) => {
+      const last = s.pts[s.pts.length-1], first = s.pts[0].y, cur = last.y, best = Math.max(...s.pts.map(p=>p.y)), d = cur-first;
+      return `<div class="panel mini"><div class="panel-head"><h3>${esc(s.ex)}</h3><div class="figs">aktuell <b>${fmt(cur)}</b> · max ${fmt(best)}<br>Top-Gewicht ${fmt(last.top)} kg · ${d===0 ? "±0" : (d>0?"+":"")+fmt(+d.toFixed(1))} seit ${shortDE(msISO(s.pts[0].x))}</div></div><div class="chart" id="chS${i}"></div></div>`;
+    }).join("")}</div>
+    <div class="section-title">Volumen <span>Nebenwert, kein Maß für Muskelreiz</span></div>
     <div class="panel">
       <div class="panel-head"><h2>Volumen pro Einheit</h2><div class="legend">${sessSeries.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div></div>
-      <div class="sub">Summe Gewicht × Wiederholungen je Trainingstag. Antippen oder wischen für Werte.</div>
+      <div class="sub">Summe Gewicht × Wiederholungen je Trainingstag. Sinkt oft nach einer Gewichtssteigerung, weil die Wiederholungen fallen. Antippen oder wischen für Werte.</div>
       <div class="chart" id="chSess"></div>
     </div>
     <div class="panel">
@@ -1027,16 +1041,11 @@ function renderStats(){
       <div class="sub">Heller Balken: ${statPeriod === "week" ? "Woche" : "Monat"} läuft noch.</div>
       <div class="chart" id="chPer"></div>
     </div>
-    <div class="section-title">Kraftentwicklung <span>Schwerster Satz pro Einheit, kg</span></div>
-    <div class="multiples">${strength.map((s,i) => {
-      const first = s.pts[0].y, cur = s.pts[s.pts.length-1].y, best = Math.max(...s.pts.map(p=>p.y)), d = cur-first;
-      return `<div class="panel mini"><div class="panel-head"><h3>${esc(s.ex)}</h3><div class="figs">aktuell <b>${fmt(cur)}</b> · max ${fmt(best)}<br>${d===0 ? "±0" : (d>0?"+":"")+fmt(+d.toFixed(2))} kg seit ${shortDE(msISO(s.pts[0].x))}</div></div><div class="chart" id="chS${i}"></div></div>`;
-    }).join("")}</div>
   </div>`;
 
   drawLine($("chSess"), {series: sessSeries, fmt: v => fmtNum(v,0)+" kg", zero: true, label: "Volumen pro Trainingseinheit"});
   drawBars($("chPer"), {bars, label: "Trainingsvolumen pro " + (statPeriod==="week" ? "Woche" : "Monat")});
-  strength.forEach((s,i) => drawLine($("chS"+i), {series: [{name: s.ex, color: c1, pts: s.pts}], fmt: v => fmt(v)+" kg", area: true, height: 120, ticks: 3, label: "Maximalgewicht "+s.ex}));
+  strength.forEach((s,i) => drawLine($("chS"+i), {series: [{name: s.ex, color: c1, pts: s.pts}], fmt: v => fmt(Math.round(v*10)/10)+" kg", area: true, height: 120, ticks: 3, label: "Geschätztes Max "+s.ex}));
   $("perW").onclick = () => { statPeriod = "week"; LS.set("statPeriod", statPeriod); renderStats(); };
   $("perM").onclick = () => { statPeriod = "month"; LS.set("statPeriod", statPeriod); renderStats(); };
 }
