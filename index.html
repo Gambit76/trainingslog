@@ -318,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v19";
+const APP_VERSION = "v20";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -437,15 +437,14 @@ function pickWorkout(){
 }
 function existingRow(ex){ return log.find(l=>l.date===state.date && l.workout===state.workout && l.ex===ex) || null; }
 function lastSession(ex){ const prev = log.filter(l=>l.ex===ex && l.date<state.date && hasAny(l.sets)); return prev.length ? prev[prev.length-1] : null; }
-/* ---------- Empfehlung fürs nächste Mal (Doppelte Progression) ----------
-   Regeln:
-   1. Referenz = höchstes Gewicht der letzten Einheit, gewertet werden nur die Sätze mit diesem Gewicht
-      (leichtere Sätze vorab = Aufwärmen/Pyramide).
-   2. Alle diese Sätze an der Obergrenze → eine Stufe höher, als gerade Sätze.
-      Schulterkritisch (Seitheben, Reverse Flys): nur wenn alle 3 Sätze mit diesem Gewicht an der Obergrenze lagen.
-   3. Im Bereich → Gewicht halten, Ziel 3 × Obergrenze.
-   4. Satz unter der Untergrenze → halten; bei Pyramide zurück auf die vorige Stufe;
-      zweimal in Folge mit demselben Gewicht → eine Stufe zurück.
+/* ---------- Empfehlung fürs nächste Mal (Doppelte Progression mit Treppe) ----------
+   Quelle: Notiz „Progressionsregel“ (Obsidian). Es wird pro Runde (Satz 1 bis 3) entschieden, nicht für alle Sätze auf einmal.
+   1. Gerade Sätze, alle 3 an der Obergrenze → Treppe startet: nur Runde 3 aufs nächste Gewicht, Runde 1+2 bleiben.
+      Schulterkritisch (Seitheben, Reverse Flys): nur wenn alle 3 Sätze mit gleichem Gewicht an der Obergrenze lagen.
+   2. Gerade Sätze im Bereich → Gewicht halten, Ziel 3 × Obergrenze.
+   3. Treppe läuft (Sätze mit gemischtem Gewicht): Halten alle Runden mit dem höchsten Gewicht die Untergrenze,
+      zieht die nächste Runde (von hinten: 3, dann 2, dann 1) mit.
+   4. Fällt eine Runde unter die Untergrenze, geht nur diese Runde zurück aufs vorige Gewicht, die anderen bleiben.
    Stufe je Gerät: Station/Kabelzug 5 kg, SZ-Stange 2,5 kg, Smartlock 2 kg, einzelne Kurzhanteln 2,5 kg. */
 const STEP_OVERRIDE = {"Rum. Kreuzheben": 2.5, "Bizepscurls": 2.5, "Hammercurls": 2}; // feste Stufe pro Übung (geht vor Geräte-Regel); Kreuzheben = SZ-Stange
 // Leichte Hantelübungen mit Smartlock (2er-Schritte) UND Einzelhanteln (z. B. Hex 7,5 / 10 kg):
@@ -480,44 +479,53 @@ function nextUp(w, step, ex){
 function nextDown(w, step, ex){
   if(ex && MIXED_KH.test(ex)){ const v = [...MIXED_WEIGHTS].reverse().find(x => x <= w - MIXED_MIN_JUMP + 1e-9); if(v) return v; }
   return Math.max(step, step===5 ? (Math.ceil(w/5-1e-9)-1)*5 : rnd(w-step)); }
-function topSets(sets){
-  const done = sets.filter(s => s[0]!==null && s[0]>0 && s[1]!==null);
-  if(!done.length) return null;
-  const top = Math.max(...done.map(s => s[0]));
-  return {top, reps: done.filter(s => s[0]===top).map(s => s[1]), lighter: done.filter(s => s[0]<top)};
+// Gewicht, auf das eine durchgefallene Runde zurückgeht: zuletzt benutztes niedrigeres Gewicht, höchstens eine Stufe tiefer.
+function olderWeight(ex, T, sess, step){
+  const one = nextDown(T, step, ex);
+  for(let k = sess.length-2; k >= 0; k--){
+    const lower = sess[k].sets.map(s => s[0]).filter(w => w!==null && w>0 && w<T);
+    if(lower.length) return Math.max(Math.max(...lower), one);
+  }
+  return one;
 }
+function roundsTxt(rs){ const n = rs.map(x => x.i+1); return (n.length>1 ? "Runden " : "Runde ") + n.join("+"); }
+function wTxt(ws){ return ws.every(w => w===ws[0]) ? `3 × ${fmt(ws[0])} kg` : ws.map(fmt).join(" · ") + " kg"; }
 function recommend(e, incToday){ // incToday: auch die heute gespeicherte Einheit zählt (Vorschau fürs nächste Mal)
   const range = repRange(e.reps);
   const sess = log.filter(l => l.ex===e.name && (incToday ? l.date<=state.date : l.date<state.date) && hasAny(l.sets));
   const last = sess[sess.length-1];
   if(!range || !last) return null;
-  const t = topSets(last.sets);
-  if(!t) return null;
+  const R = last.sets.map((s, i) => ({i, w: s[0], r: s[1]})).filter(x => x.w!==null && x.w>0 && x.r!==null);
+  if(!R.length) return null;
   const [lo, hi] = range, step = stepFor(e.name, e.device), strict = STRICT_RX.test(e.name);
   const tip = (SHOULDER_TIP.find(([rx]) => rx.test(e.name)) || [])[1] || "";
-  const repsTxt = t.reps.join("/");
-  const atTop = t.reps.every(r => r >= hi), below = t.reps.some(r => r < lo);
-  let w = t.top, kind = "hold", why;
-  if(atTop && (!strict || t.reps.length >= 3)){
-    w = nextUp(t.top, step, e.name); kind = "up";
-    why = `${fmt(t.top)} kg: ${repsTxt} Wdh., Obergrenze ${hi} erreicht.`;
-  } else if(atTop){
-    why = `${fmt(t.top)} kg erst in ${t.reps.length} von 3 Sätzen. Schulterübung: zuerst 3 × ${hi} mit gleichem Gewicht.`;
-  } else if(below){
-    const prev = sess[sess.length-2], pt = prev && topSets(prev.sets);
-    if(t.lighter.length){
-      const lw = Math.max(...t.lighter.map(s => s[0]));
-      const ok = t.lighter.filter(s => s[0]===lw).every(s => s[1] >= lo);
-      if(ok){ w = lw; kind = "down"; why = `${fmt(t.top)} kg nur ${repsTxt} Wdh. (unter ${lo}). Erst ${fmt(lw)} kg sauber über alle 3 Sätze.`; }
-      else why = `${fmt(t.top)} kg: ${repsTxt} Wdh., unter ${lo}. Gewicht halten.`;
-    } else if(pt && pt.top===t.top && pt.reps.some(r => r < lo)){
-      w = nextDown(t.top, step, e.name); kind = "down";
-      why = `Zweimal in Folge unter ${lo} Wdh. mit ${fmt(t.top)} kg. Eine Stufe zurück.`;
-    } else why = `${fmt(t.top)} kg: ${repsTxt} Wdh., noch unter ${lo}. Normal nach einer Steigerung, Gewicht halten.`;
+  const T = Math.max(...R.map(x => x.w));
+  const N = R.filter(x => x.w===T), O = R.filter(x => x.w<T);
+  const repsTxt = N.map(x => x.r).join("/");
+  const ws = last.sets.map(s => (s[0]!==null && s[0]>0) ? s[0] : T);
+  const fell = N.filter(x => x.r < lo);
+  let kind = "hold", why;
+  if(fell.length){
+    const oldW = O.length ? Math.max(...O.map(x => x.w)) : olderWeight(e.name, T, sess, step);
+    fell.forEach(x => ws[x.i] = oldW);
+    kind = "down";
+    why = fell.length===N.length && !O.length
+      ? `${fmt(T)} kg: ${repsTxt} Wdh., alle Runden unter ${lo}. Eine Stufe zurück.`
+      : `${fmt(T)} kg: ${roundsTxt(fell)} nur ${fell.map(x => x.r).join("/")} Wdh. (unter ${lo}). Nur ${fell.length>1 ? "diese Runden" : "diese Runde"} zurück auf ${fmt(oldW)} kg, der Rest bleibt.`;
+  } else if(O.length){
+    const c = Math.max(...O.map(x => x.i));
+    ws[c] = T; kind = "up";
+    why = `${roundsTxt(N)} mit ${fmt(T)} kg: ${repsTxt} Wdh., Untergrenze ${lo} gehalten. Treppe: Runde ${c+1} zieht mit.`;
+  } else if(N.every(x => x.r >= hi) && (!strict || N.length >= 3)){
+    const up = nextUp(T, step, e.name);
+    ws[ws.length-1] = up; kind = "up";
+    why = `${fmt(T)} kg: ${repsTxt} Wdh., Obergrenze ${hi} erreicht. Treppe: zuerst nur Runde 3 mit ${fmt(up)} kg, Runde 1+2 bleiben.`;
+  } else if(N.every(x => x.r >= hi)){
+    why = `${fmt(T)} kg erst in ${N.length} von 3 Sätzen. Schulterübung: zuerst 3 × ${hi} mit gleichem Gewicht.`;
   } else {
-    why = `${fmt(t.top)} kg: ${repsTxt} Wdh., im Bereich. Steigern bei 3 × ${hi}.`;
+    why = `${fmt(T)} kg: ${repsTxt} Wdh., im Bereich. Steigern bei 3 × ${hi}.`;
   }
-  return {w, kind, lo, hi, why, tip, lastTop: t.top, lastReps: t.reps};
+  return {ws, kind, lo, hi, why, tip};
 }
 function history(ex){ const m = new Map(); for(const l of log){ if(l.ex===ex && l.date<=state.date && hasAny(l.sets)) m.set(l.date, l); } return [...m.values()].slice(-12); }
 
@@ -622,7 +630,7 @@ function nextHTML(e, sets){
   if(!row || !sets || !sameSets(row.sets, sets) || !row.sets.every(s => s[0]!==null && s[1]!==null)) return "";
   const nx = recommend(e, true);
   if(!nx) return "";
-  return `<div class="nextbox"><span class="t">Fürs nächste Training: ${nx.kind==="up" ? "↑ steigern" : nx.kind==="down" ? "↓ zurück" : "→ halten"} auf <span class="num">3 × ${fmt(nx.w)} kg</span> · Ziel ${nx.lo}–${nx.hi} Wdh.</span><span class="why">${esc(nx.why)}</span></div>`;
+  return `<div class="nextbox"><span class="t">Fürs nächste Training: ${nx.kind==="up" ? "↑ steigern" : nx.kind==="down" ? "↓ zurück" : "→ halten"} auf <span class="num">${wTxt(nx.ws)}</span> · Ziel ${nx.lo}–${nx.hi} Wdh.</span><span class="why">${esc(nx.why)}</span></div>`;
 }
 function renderEntry(){
   const cfgW = plan[state.workout] || {focus:"", exercises:[]};
@@ -641,7 +649,7 @@ function renderEntry(){
       html += `<article class="card">
         <div class="card-head"><div><h3>${esc(e.name)}</h3><div class="meta">${[e.device, e.reps ? e.reps+" Wdh." : ""].filter(Boolean).map(esc).join(" · ")}</div></div><span class="chip" id="chip-${e.idx}"></span></div>
         ${last ? `<div class="last"><span>Zuletzt ${shortDE(last.date)}: <span class="num">${lastTxt}</span></span>${sparkSVG(history(e.name))}</div>` : `<div class="last">Noch keine früheren Einträge</div>`}
-        ${rc ? `<div class="reco ${rc.kind}"><span class="t">${rc.kind==="up" ? "↑ Steigern" : rc.kind==="down" ? "↓ Zurück" : "→ Halten"}: <span class="num">3 × ${fmt(rc.w)} kg</span> · Ziel ${rc.lo}–${rc.hi} Wdh.</span><span class="why">${esc(rc.why)}</span>${rc.tip ? `<span class="tip2">${esc(rc.tip)}</span>` : ""}</div>` : ""}
+        ${rc ? `<div class="reco ${rc.kind}"><span class="t">${rc.kind==="up" ? "↑ Steigern" : rc.kind==="down" ? "↓ Zurück" : "→ Halten"}: <span class="num">${wTxt(rc.ws)}</span> · Ziel ${rc.lo}–${rc.hi} Wdh.</span><span class="why">${esc(rc.why)}</span>${rc.tip ? `<span class="tip2">${esc(rc.tip)}</span>` : ""}</div>` : ""}
         <div class="sets">
           ${[0,1,2].map(s => `<div class="set"><label for="w-${e.idx}-${s}">Satz ${s+1}</label>
             <div class="field">${pickerHTML(`w-${e.idx}-${s}`, e, s, 0, wVals, suggestWeight(e.name, s, last, sets, rc), fmt, "")}<span>kg</span></div>
@@ -671,7 +679,7 @@ function renderEntry(){
     const e = cfgW.exercises[Number(b.dataset.reco)], rc = recommend(e), last = lastSession(e.name), sets = state.entries[e.name];
     if(!rc) return;
     for(let s=0; s<3; s++){
-      if(sets[s][0]===null) sets[s][0] = rc.w;
+      if(sets[s][0]===null) sets[s][0] = rc.ws[s];
       if(sets[s][1]===null) sets[s][1] = suggestReps(e, s, last, rc);
     }
     saveDraft(); renderEntry();
@@ -691,15 +699,16 @@ function weightValues(ex){
   return [...out].sort((a,b)=>a-b);
 }
 function suggestWeight(ex, s, last, sets, rc){
-  if(rc) return rc.w;
+  if(rc) return rc.ws[s];
   if(last && last.sets[s][0]!==null) return last.sets[s][0];
   for(let i=s-1; i>=0; i--) if(sets[i][0]!==null) return sets[i][0];
   return null;
 }
 function suggestReps(e, s, last, rc){
   if(rc){
-    if(rc.w===rc.lastTop && last && last.sets[s][0]===rc.lastTop && last.sets[s][1]!==null) return Math.min(last.sets[s][1], rc.hi);
-    return rc.w > rc.lastTop ? rc.lo : rc.hi;
+    const lw = last ? last.sets[s][0] : null, lr = last ? last.sets[s][1] : null;
+    if(lw!==null && rc.ws[s]===lw && lr!==null) return Math.min(lr, rc.hi);
+    return lw!==null && rc.ws[s] > lw ? rc.lo : rc.hi;
   }
   if(last && last.sets[s][1]!==null) return last.sets[s][1];
   const m = String(e.reps||"").match(/\d+/); return m ? Number(m[0]) : 10;

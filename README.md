@@ -34,10 +34,11 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **Eintragen:** Datum (heute), Workout A/B im Wechsel, Übungen aus dem Blatt „Trainingsplan“, gruppiert nach Supersätzen.
 - **Auswahlräder** für Gewicht (fest 0,5-kg-Schritte) und Wiederholungen. Vorbelegt mit dem Wert vom letzten Mal (grau). Rad öffnen und schließen übernimmt ihn, „–“ ganz oben leert, „Anderer Wert …“ ganz unten für freie Eingabe.
 - **Speichern** ist sofort lokal gesichert und wird ins Sheet übertragen, offline sobald wieder Netz da ist. Gleiches Datum + Workout + Übung überschreibt die vorhandene Zeile (auch vom Button angelegte), keine Duplikate.
-- **Empfehlung fürs nächste Mal (v9):** Pro Übung ein Kasten „↑ Steigern / → Halten / ↓ Zurück: 3 × X kg“ mit Begründung. Die Räder sind mit der Empfehlung vorbelegt, „Empfehlung übernehmen“ füllt alle drei Sätze. Regeln (doppelte Progression, Wdh.-Bereich aus Spalte „Wdh.“ im Trainingsplan):
-  - Gewertet werden nur die Sätze mit dem höchsten Gewicht der letzten Einheit (leichtere Sätze = Aufwärmen/Pyramide).
-  - Alle diese Sätze an der Obergrenze → eine Stufe höher, als gerade Sätze. Seitheben und Reverse Flys erst, wenn alle 3 Sätze mit gleichem Gewicht an der Obergrenze lagen.
-  - Im Bereich → halten. Unter der Untergrenze → halten (bei Pyramide zurück auf die vorige Stufe), zweimal in Folge → eine Stufe zurück.
+- **Empfehlung fürs nächste Mal (v9, ab v20 mit Treppe):** Pro Übung ein Kasten „↑ Steigern / → Halten / ↓ Zurück“ mit Begründung, Gewicht je Runde (z. B. „26 · 26 · 28 kg“). Die Räder sind mit der Empfehlung vorbelegt, „Empfehlung übernehmen“ füllt alle drei Sätze. Regeln (doppelte Progression nach der Notiz „Progressionsregel“, Wdh.-Bereich aus Spalte „Wdh.“ im Trainingsplan), entschieden wird pro Runde:
+  - Gerade Sätze, alle 3 an der Obergrenze → Treppe startet: nur Runde 3 aufs nächste Gewicht, Runde 1+2 bleiben. Seitheben und Reverse Flys erst, wenn alle 3 Sätze mit gleichem Gewicht an der Obergrenze lagen.
+  - Gerade Sätze im Bereich → halten, Ziel 3 × Obergrenze.
+  - Treppe läuft (gemischte Gewichte): Halten alle Runden mit dem höchsten Gewicht die Untergrenze, zieht die nächste Runde mit (3, dann 2, dann 1).
+  - Fällt eine Runde unter die Untergrenze, geht nur diese Runde zurück aufs vorige Gewicht (höchstens eine Stufe), die anderen bleiben.
   - Stufe je Gerät (Spalte „Gerät“ im Trainingsplan, sonst Übungsname): Station/Kabelzug 5 kg, SZ-Stange 2,5 kg, Smartlock 2 kg, einzelne Kurzhanteln 2,5 kg. Feste Stufen pro Übung über `STEP_OVERRIDE` in `index.html`.
 - **Verlauf:** letzte 30 Einheiten.
 - **Mobility:** Checkbox „Mobility-Routine gemacht“ am Ende von Workout A/B oder eigener Tab mit Schalter pro Tag und 14-Tage-Übersicht. Im Sheet als Zeile mit Workout „Mobility“, Spalte J = ✓.
@@ -55,6 +56,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v6** – Reiter „Übungen“ mit Schaubildern und Ausführungshinweisen
 - **v7** – Checkbox „Mobility-Routine gemacht“ ohne „im Anschluss“, Mobility-Übung „L-Sit mit Rotation“ ergänzt
 - **v8** – Schalter „Display an“ (Bildschirm bleibt beim Training an)
+- **v20** – Empfehlung nach Treppen-Progression: pro Runde statt alle drei Sätze auf einmal (Steigern: zuerst nur Runde 3; Zurück: nur die durchgefallene Runde); „Einmal unter der Untergrenze = halten, zweimal = zurück“ entfällt
 - **v19** – „Fürs nächste Training“ dezent: gestrichelter Rahmen, grau, ohne Ampelfarben (klar getrennt von der Empfehlung für heute)
 - **v18** – Nach dem Speichern zeigt jede vollständige Übung („Nächstes Mal“) sofort die Empfehlung fürs nächste Training, auch am selben Tag
 - **v17** – Timer ohne „+30“; „Display an“ hält den Bildschirm auch ohne Fingertipp wach (stummes Unsichtbar-Video als Fallback zur Wake-Lock-API)
