@@ -1,0 +1,10 @@
+HINWEIS FÜR MENSCHEN UND AGENTEN
+================================
+Der Apps-Script-Quelltext dieser App (früher hier: apps-script/Api.gs) wurde am 19.11.2026
+in das PRIVATE Sammel-Repo verschoben:
+
+    https://github.com/Gambit76/apps-script   ->   Ordner: trainingslog/Api.gs
+
+Dort liegt die aktuelle und maßgebliche Version. Änderungen am Backend bitte NUR dort
+vornehmen (und im Apps-Script-Editor des Sheets nachziehen), nicht hier neu anlegen.
+Grund: Das Skript enthält sheet-spezifische Details, und dieses Repo ist öffentlich.

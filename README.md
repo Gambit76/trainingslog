@@ -9,7 +9,7 @@ iPhone-Web-App (PWA) als Frontend für das Google Sheet **Trainingslog**. Läuft
 | `index.html` | Die komplette App (Oberfläche + Logik) | GitHub Pages |
 | `sw.js` | Offline-Cache. **Bei jeder Änderung `VERSION` hochzählen** | GitHub Pages |
 | `manifest.webmanifest`, `icons/` | Name und Icon auf dem Home-Bildschirm | GitHub Pages |
-| `apps-script/Api.gs` | Schnittstelle zum Sheet (Lesen/Schreiben) | Apps Script im Sheet, **neben** dem bestehenden `Code.gs` |
+| `apps-script/info.txt` | Verweis: `Api.gs` liegt im privaten Repo `Gambit76/apps-script` (Ordner `trainingslog/`) | Apps Script im Sheet, **neben** dem bestehenden `Code.gs` |
 | `docs/Einrichtung.md` | Ersteinrichtung Schritt für Schritt | – |
 | `docs/APP-STANDARD.md` | Gemeinsamer Design- und Technik-Standard der drei Apps (hell/dunkel, Einstellungen, Versionen) | – |
 
@@ -27,7 +27,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
    ```
 4. Nach 1–2 Minuten ist die neue Version online. App auf dem iPhone **zweimal** öffnen.
 
-**Änderungen an `apps-script/Api.gs`** landen nicht automatisch im Sheet: Inhalt im Apps-Script-Editor in die Datei `Api` kopieren, speichern, dann **Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Version: Neue Version → Bereitstellen** (URL bleibt gleich).
+**Änderungen an `Api.gs` (privates Repo `Gambit76/apps-script`)** landen nicht automatisch im Sheet: Inhalt im Apps-Script-Editor in die Datei `Api` kopieren, speichern, dann **Bereitstellen → Bereitstellungen verwalten → Bearbeiten → Version: Neue Version → Bereitstellen** (URL bleibt gleich).
 
 ## Funktionen (Stand v9)
 

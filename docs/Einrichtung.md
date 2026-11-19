@@ -24,7 +24,7 @@ Dauer: ca. 15–20 Minuten, einmalig. Steht am besten am Rechner, Schritt 4 dann
 1. Sheet **Trainingslog** öffnen → **Erweiterungen → Apps Script**. Du siehst dein bestehendes `Code.gs`.
 2. *(Geprüft: Dein `workoutEintragen()` und `Api.gs` vertragen sich, es gibt keine Namenskonflikte.)*
 3. Links bei **Dateien** auf **+** → **Script** → Name `Api` (Apps Script hängt `.gs` selbst an).
-4. Den Platzhalter-Inhalt der neuen Datei löschen und den kompletten Inhalt der mitgelieferten `Api.gs` einfügen. Speichern (⌘S).
+4. Den Platzhalter-Inhalt der neuen Datei löschen und den kompletten Inhalt von `Api.gs` einfügen (liegt im privaten Repo `Gambit76/apps-script`, Ordner `trainingslog/`). Speichern (⌘S).
 5. In der Funktionsauswahl oben **`setupKey`** wählen (die Datei `Api.gs` muss dafür geöffnet sein) → **Ausführen**.
 6. Google fragt eventuell nach zusätzlichen Berechtigungen:
    - **Berechtigungen prüfen** → dein Konto wählen.
