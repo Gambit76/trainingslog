@@ -318,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v22";
+const APP_VERSION = "v23";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -344,7 +344,9 @@ function fmt(n){ return n===null||n===undefined ? "" : String(n).replace(".",","
 function isoToDE(iso){ const [y,m,d]=iso.split("-"); return d+"."+m+"."+y; }
 function shortDE(iso){ const [,m,d]=iso.split("-"); return d+"."+m+"."; }
 function repUpper(r){ const n=String(r||"").match(/\d+/g); return n? Number(n[n.length-1]) : null; }
-function volume(sets){ return sets.reduce((a,[w,r])=> a + ((w??0)*(r??0)), 0); }
+// Kurzhantel-Übungen: Gewicht ist pro Hantel bzw. pro Seite eingetragen, real bewegt wird es zweimal (beide Hände / beide Seiten)
+const DB_RX = /kh-|kurzhantel|floor\s*press|bodendr|kreuzheben|reverse|seitheben|hammer/i;
+function volume(sets, name){ const f = name && DB_RX.test(name) ? 2 : 1; return f * sets.reduce((a,[w,r])=> a + ((w??0)*(r??0)), 0); }
 function hasAny(sets){ return sets && sets.some(([w,r])=> w!==null || r!==null); }
 function sameSets(a,b){ for(let i=0;i<3;i++){ if((a[i][0]??null)!==(b[i][0]??null) || (a[i][1]??null)!==(b[i][1]??null)) return false; } return true; }
 function emptySets(){ return [[null,null],[null,null],[null,null]]; }
@@ -772,7 +774,7 @@ function refreshStatus(){
   exs.forEach((e,i) => {
     const sets = state.entries[e.name], ex = existingRow(e.name), chip = $("chip-"+i);
     if(!sets) return;
-    vol += volume(sets); if(hasAny(sets)) done++;
+    vol += volume(sets, e.name); if(hasAny(sets)) done++;
     if(!chip) return;
     if(ex && sameSets(ex.sets, sets) && !hasAny(sets) && !ex.pending){ chip.className = "chip"; chip.textContent = "Offen"; }
     else if(ex && sameSets(ex.sets, sets)){ chip.className = ex.pending ? "chip wait" : "chip saved"; chip.textContent = ex.pending ? "Wartet" : "Im Sheet"; }
@@ -782,7 +784,7 @@ function refreshStatus(){
   });
   const prev = log.filter(l => l.workout===state.workout && l.date<state.date && hasAny(l.sets));
   const prevDate = prev.length ? prev[prev.length-1].date : null;
-  const prevVol = prevDate ? log.filter(l => l.workout===state.workout && l.date===prevDate).reduce((a,l)=>a+volume(l.sets),0) : 0;
+  const prevVol = prevDate ? log.filter(l => l.workout===state.workout && l.date===prevDate).reduce((a,l)=>a+volume(l.sets, l.ex),0) : 0;
   $("summary").innerHTML = exs.length ? `${done}/${exs.length} Übungen · Volumen <b class="num">${fmtKg(vol)} kg</b>` + (prevDate ? ` · zuletzt ${shortDE(prevDate)}: <span class="num">${fmtKg(prevVol)} kg</span>` : "") : "";
   const p = pending(), mp = mobPending();
   $("saveBtn").disabled = p.length === 0 && !mp;
@@ -811,7 +813,7 @@ function renderHistory(){
   for(const l of log){ if(!hasAny(l.sets)) continue; const k = l.date+"|"+l.workout; if(!sessions.has(k)) sessions.set(k, {date:l.date, workout:l.workout, items:[]}); sessions.get(k).items.push(l); }
   const list = [...sessions.values()].sort((a,b) => a.date < b.date ? 1 : -1).slice(0, 30);
   $("hist").innerHTML = list.length ? `<div class="history">${list.map(s => `
-    <div class="hist"><div class="hist-top"><strong>${isoToDE(s.date)} · ${esc(s.workout)}</strong><span class="num meta">${fmtKg(s.items.reduce((a,l)=>a+volume(l.sets),0))} kg</span></div>
+    <div class="hist"><div class="hist-top"><strong>${isoToDE(s.date)} · ${esc(s.workout)}</strong><span class="num meta">${fmtKg(s.items.reduce((a,l)=>a+volume(l.sets, l.ex),0))} kg</span></div>
     <ul>${s.items.map(l => `<li><span>${esc(l.ex)}${l.pending ? " ·  wartet" : ""}</span><span class="num">${l.sets.filter(x=>x[0]!==null).map(x=>`${fmt(x[0])}×${x[1]??"–"}`).join(" ")}</span></li>`).join("")}</ul></div>`).join("")}</div>`
     : `<div class="empty">Noch keine Einträge.</div>`;
 }
@@ -875,7 +877,7 @@ function sessionsList(){
     if(!hasAny(l.sets)) continue;
     const k = l.date+"|"+l.workout;
     if(!m.has(k)) m.set(k, {date: l.date, workout: l.workout, vol: 0});
-    m.get(k).vol += volume(l.sets);
+    m.get(k).vol += volume(l.sets, l.ex);
   }
   return [...m.values()].sort((a,b) => a.date < b.date ? -1 : 1);
 }
