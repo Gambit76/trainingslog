@@ -318,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v23";
+const APP_VERSION = "v24";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -781,6 +781,12 @@ function refreshStatus(){
     else if(ex){ chip.className = "chip changed"; chip.textContent = "Geändert"; }
     else if(hasAny(sets)){ chip.className = "chip changed"; chip.textContent = "Neu"; }
     else { chip.className = "chip"; chip.textContent = "Offen"; }
+    // Nächstes-Mal-Box mitführen: erscheint auch dann, wenn nur der Status aufgefrischt wird (z. B. Sync, während ein Feld den Fokus hat)
+    const card = chip.closest("article"), nb = card && card.querySelector(".nextbox"), h = nextHTML(e, sets);
+    if(card && (nb ? nb.outerHTML : "") !== h){
+      if(nb) nb.remove();
+      if(h){ const anchor = card.querySelector(".btns"); if(anchor) anchor.insertAdjacentHTML("beforebegin", h); else card.insertAdjacentHTML("beforeend", h); }
+    }
   });
   const prev = log.filter(l => l.workout===state.workout && l.date<state.date && hasAny(l.sets));
   const prevDate = prev.length ? prev[prev.length-1].date : null;

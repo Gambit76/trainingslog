@@ -59,6 +59,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v21** – Statistik: Kraftentwicklung zeigt das geschätzte Max (Epley) statt nur das schwerste Gewicht und steht vor dem Volumen; Volumen als Nebenwert gekennzeichnet
 - **v22** – Empfehlung: Bei Bereichen wie 12–15 wird schon ab 14 Wdh. in allen drei Sätzen gesteigert (Reserve); Schulterübungen (Seitheben, Reverse Flys) bleiben streng bei der Obergrenze
 - **v23** – Volumen zählt Kurzhantel-Übungen (Floor Press, KH-Rudern, Rum. Kreuzheben, Seitheben, Reverse Flys, Hammercurls) doppelt, weil das eingetragene Gewicht pro Hantel/Seite gilt; wirkt auch rückwirkend. Geschätztes Max bleibt unverändert
+- **v24** – Hinweis „Fürs nächste Training“ aktualisiert sich jetzt auch beim Status-Update (Sync bei fokussiertem Feld, Eingabe), nicht nur beim vollständigen Neuzeichnen
 - **v20** – Empfehlung nach Treppen-Progression: pro Runde statt alle drei Sätze auf einmal (Steigern: zuerst nur Runde 3; Zurück: nur die durchgefallene Runde); „Einmal unter der Untergrenze = halten, zweimal = zurück“ entfällt
 - **v19** – „Fürs nächste Training“ dezent: gestrichelter Rahmen, grau, ohne Ampelfarben (klar getrennt von der Empfehlung für heute)
 - **v18** – Nach dem Speichern zeigt jede vollständige Übung („Nächstes Mal“) sofort die Empfehlung fürs nächste Training, auch am selben Tag
