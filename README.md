@@ -38,7 +38,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
   - Gerade Sätze, alle 3 an der Obergrenze → Treppe startet: nur Runde 3 aufs nächste Gewicht, Runde 1+2 bleiben. Seitheben und Reverse Flys erst, wenn alle 3 Sätze mit gleichem Gewicht an der Obergrenze lagen.
   - Gerade Sätze im Bereich → halten, Ziel 3 × Obergrenze.
   - Treppe läuft (gemischte Gewichte): Halten alle Runden mit dem höchsten Gewicht die Untergrenze, zieht die nächste Runde mit (3, dann 2, dann 1).
-  - Fällt eine Runde unter die Untergrenze, geht nur diese Runde zurück aufs vorige Gewicht (höchstens eine Stufe), die anderen bleiben.
+  - Fällt eine Runde unter die Untergrenze, geht nur diese Runde zurück aufs vorige Gewicht (höchstens eine Stufe), die anderen bleiben – erst beim zweiten Mal in Folge mit demselben Gewicht oder bei mehr als 2 Wdh. darunter; beim ersten Mal wird gehalten (Toleranz, v26).
   - Stufe je Gerät (Spalte „Gerät“ im Trainingsplan, sonst Übungsname): Station/Kabelzug 5 kg, SZ-Stange 2,5 kg, Smartlock 2 kg, einzelne Kurzhanteln 2,5 kg. Feste Stufen pro Übung über `STEP_OVERRIDE` in `index.html`.
 - **Verlauf:** letzte 30 Einheiten.
 - **Mobility:** Checkbox „Mobility-Routine gemacht“ am Ende von Workout A/B oder eigener Tab mit Schalter pro Tag und 14-Tage-Übersicht. Im Sheet als Zeile mit Workout „Mobility“, Spalte J = ✓.
@@ -59,6 +59,7 @@ Im Repo liegen **keine** Zugangsdaten. Web-App-URL und Schlüssel werden nur in 
 - **v21** – Statistik: Kraftentwicklung zeigt das geschätzte Max (Epley) statt nur das schwerste Gewicht und steht vor dem Volumen; Volumen als Nebenwert gekennzeichnet
 - **v22** – Empfehlung: Bei Bereichen wie 12–15 wird schon ab 14 Wdh. in allen drei Sätzen gesteigert (Reserve); Schulterübungen (Seitheben, Reverse Flys) bleiben streng bei der Obergrenze
 - **v23** – Volumen zählt Kurzhantel-Übungen (Floor Press, KH-Rudern, Rum. Kreuzheben, Seitheben, Reverse Flys, Hammercurls) doppelt, weil das eingetragene Gewicht pro Hantel/Seite gilt; wirkt auch rückwirkend. Geschätztes Max bleibt unverändert
+- **v26** – Toleranz in der Empfehlung: Verfehlt eine Runde die Untergrenze einmal (um bis zu 2 Wdh.), bleibt das Gewicht; zurück erst beim zweiten Mal in Folge mit demselben Gewicht oder bei mehr als 2 Wdh. darunter
 - **v25** – Ton am Pausenende zuverlässiger: Ton-Kontext wird bei jedem Fingertipp, beim Zurückkehren in die App und direkt vor dem Ton wieder aufgeweckt (iOS legt ihn nach Sperre, App-Wechsel oder dem Display-an-Video still)
 - **v24** – Hinweis „Fürs nächste Training“ aktualisiert sich jetzt auch beim Status-Update (Sync bei fokussiertem Feld, Eingabe), nicht nur beim vollständigen Neuzeichnen
 - **v20** – Empfehlung nach Treppen-Progression: pro Runde statt alle drei Sätze auf einmal (Steigern: zuerst nur Runde 3; Zurück: nur die durchgefallene Runde); „Einmal unter der Untergrenze = halten, zweimal = zurück“ entfällt

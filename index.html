@@ -318,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v25";
+const APP_VERSION = "v26";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -446,7 +446,8 @@ function lastSession(ex){ const prev = log.filter(l=>l.ex===ex && l.date<state.d
    2. Gerade Sätze im Bereich → Gewicht halten, Ziel 3 × Obergrenze.
    3. Treppe läuft (Sätze mit gemischtem Gewicht): Halten alle Runden mit dem höchsten Gewicht die Untergrenze,
       zieht die nächste Runde (von hinten: 3, dann 2, dann 1) mit.
-   4. Fällt eine Runde unter die Untergrenze, geht nur diese Runde zurück aufs vorige Gewicht, die anderen bleiben.
+   4. Fällt eine Runde unter die Untergrenze, geht nur diese Runde zurück aufs vorige Gewicht, die anderen bleiben –
+      aber erst beim zweiten Mal in Folge mit demselben Gewicht. Beim ersten Mal (bis 2 Wdh. darunter) wird gehalten (Toleranz, v26).
    Stufe je Gerät: Station/Kabelzug 5 kg, SZ-Stange 2,5 kg, Smartlock 2 kg, einzelne Kurzhanteln 2,5 kg. */
 const STEP_OVERRIDE = {"Rum. Kreuzheben": 2.5, "Bizepscurls": 2.5, "Hammercurls": 2}; // feste Stufe pro Übung (geht vor Geräte-Regel); Kreuzheben = SZ-Stange
 // Leichte Hantelübungen mit Smartlock (2er-Schritte) UND Einzelhanteln (z. B. Hex 7,5 / 10 kg):
@@ -454,6 +455,7 @@ const STEP_OVERRIDE = {"Rum. Kreuzheben": 2.5, "Bizepscurls": 2.5, "Hammercurls"
 const MIXED_KH = /seitheb|reverse\s*fl/i;
 const MIXED_WEIGHTS = [...new Set([...Array.from({length: 16}, (_, i) => (i+1)*2), ...Array.from({length: 12}, (_, i) => (i+1)*2.5)])].sort((a,b)=>a-b);
 const MIXED_MIN_JUMP = 1.5;
+const TOL_REPS = 2; // Toleranz: einmal bis zu 2 Wdh. unter der Untergrenze → halten statt zurück
 const STRICT_RX = /seitheb|reverse\s*fl/i;          // erst steigern, wenn 3 × Obergrenze mit gleichem Gewicht
 const SHOULDER_TIP = [
   [/seitheb/i, "Oberkörper aufrecht. Arme schräg nach vorn-außen (V statt T, ca. 30° vor der Seitlinie), Daumen oben, kein Schwung."],
@@ -507,14 +509,26 @@ function recommend(e, incToday){ // incToday: auch die heute gespeicherte Einhei
   const repsTxt = N.map(x => x.r).join("/");
   const ws = last.sets.map(s => (s[0]!==null && s[0]>0) ? s[0] : T);
   const fell = N.filter(x => x.r < lo);
+  // Toleranz: Erstes Verfehlen der Untergrenze (um höchstens TOL_REPS Wdh.) → Gewicht halten.
+  // Zurück erst, wenn dieselbe Runde mit demselben Gewicht zum zweiten Mal in Folge unter der Untergrenze liegt
+  // oder deutlich (mehr als TOL_REPS Wdh.) darunter.
+  const prev = sess.length > 1 ? sess[sess.length-2] : null;
+  const missedBefore = x => { const ps = prev && prev.sets[x.i]; return !!ps && ps[0]===T && ps[1]!==null && ps[1] < lo; };
+  const back = fell.filter(x => missedBefore(x) || x.r < lo - TOL_REPS);
+  const tol = fell.filter(x => !back.includes(x));
   let kind = "hold", why;
-  if(fell.length){
+  const tolTxt = tol.length ? `${roundsTxt(tol)} mit ${fmt(T)} kg: ${tol.map(x => x.r).join("/")} Wdh. (Ziel ${lo}). Toleranz: Gewicht halten, erst beim zweiten Mal in Folge zurück.` : "";
+  if(back.length){
     const oldW = O.length ? Math.max(...O.map(x => x.w)) : olderWeight(e.name, T, sess, step);
-    fell.forEach(x => ws[x.i] = oldW);
+    back.forEach(x => ws[x.i] = oldW);
     kind = "down";
-    why = fell.length===N.length && !O.length
-      ? `${fmt(T)} kg: ${repsTxt} Wdh., alle Runden unter ${lo}. Eine Stufe zurück.`
-      : `${fmt(T)} kg: ${roundsTxt(fell)} nur ${fell.map(x => x.r).join("/")} Wdh. (unter ${lo}). Nur ${fell.length>1 ? "diese Runden" : "diese Runde"} zurück auf ${fmt(oldW)} kg, der Rest bleibt.`;
+    const reason = back.every(missedBefore) ? `zum zweiten Mal unter ${lo}` : (back.some(missedBefore) ? `unter ${lo} (wiederholt bzw. deutlich)` : `deutlich unter ${lo}`);
+    why = (back.length===N.length && !O.length
+      ? `${fmt(T)} kg: ${repsTxt} Wdh., alle Runden ${reason}. Eine Stufe zurück.`
+      : `${fmt(T)} kg: ${roundsTxt(back)} nur ${back.map(x => x.r).join("/")} Wdh., ${reason}. Nur ${back.length>1 ? "diese Runden" : "diese Runde"} zurück auf ${fmt(oldW)} kg, der Rest bleibt.`)
+      + (tolTxt ? " " + tolTxt : "");
+  } else if(tol.length){
+    why = tolTxt;
   } else if(O.length){
     const c = Math.max(...O.map(x => x.i));
     ws[c] = T; kind = "up";
