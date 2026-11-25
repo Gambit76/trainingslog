@@ -318,7 +318,7 @@ dialog::backdrop{background:rgba(0,0,0,.4)}
 
 <script>
 "use strict";
-const APP_VERSION = "v24";
+const APP_VERSION = "v25";
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const LS = {
@@ -1063,17 +1063,31 @@ function renderStats(){
 let rest = {end: 0, iv: null, done: false, hide: null}, audioCtx = null;
 function restSec(){ const v = Number(LS.get("restSec", 90)); return v > 0 ? v : 90; }
 function fmtMS(sec){ return Math.floor(sec / 60) + ":" + String(sec % 60).padStart(2, "0"); }
+// iOS setzt den AudioContext nach Sperre, App-Wechsel oder Start des stummen Display-an-Videos
+// auf "suspended"/"interrupted". Deshalb bei jedem Fingertipp und vor dem Ton wieder aufwecken.
+function ensureAudio(){
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state !== "running") return audioCtx.resume();
+  }catch(e){}
+  return Promise.resolve();
+}
+function playBeep(){
+  [0, 0.25, 0.5].forEach(t => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+    const at = audioCtx.currentTime + t;
+    g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.3, at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+    o.start(at); o.stop(at + 0.2);
+  });
+}
 function beep(){
   if(!LS.get("restBeep", true)) return;
   try{
-    if(!audioCtx) return;
-    [0, 0.25, 0.5].forEach(t => {
-      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
-      const at = audioCtx.currentTime + t;
-      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(0.3, at + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
-      o.start(at); o.stop(at + 0.2);
-    });
+    if(audioCtx){
+      if(audioCtx.state === "running") playBeep();
+      else { const pr = audioCtx.resume(); if(pr && pr.then) pr.then(() => { try{ playBeep(); }catch(e){} }).catch(() => {}); }
+    }
   }catch(e){}
   try{ navigator.vibrate && navigator.vibrate([200, 100, 200, 100, 200]); }catch(e){}
 }
@@ -1094,7 +1108,7 @@ function tickRest(){
   paintRest();
 }
 function startRest(sec){
-  try{ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === "suspended") audioCtx.resume(); }catch(e){}
+  ensureAudio();
   clearInterval(rest.iv); clearTimeout(rest.hide);
   rest.end = Date.now() + sec * 1000; rest.done = false;
   tickRest();
@@ -1355,10 +1369,13 @@ function boot(){
   $("wakeBtn").onclick = () => { wakePref = !wakePref; LS.set("wake", wakePref); updateWake(); };
   document.addEventListener("pointerdown", () => { if(!wakeSentinel) updateWake(); }, {passive: true});
   document.addEventListener("touchstart", () => { if(!wakeSentinel) updateWake(); }, {passive: true});
+  // Nach dem Display-an-Video (startet bei Fingertipp) den Ton-Kontext im selben Tipp wieder entsperren
+  document.addEventListener("touchend", () => { if(audioCtx) ensureAudio(); }, {passive: true});
+  document.addEventListener("click", () => { if(audioCtx) ensureAudio(); }, {passive: true});
   window.addEventListener("pageshow", updateWake);
   window.addEventListener("focus", updateWake);
   document.addEventListener("visibilitychange", () => {
-    if(document.visibilityState === "visible") tickRest();
+    if(document.visibilityState === "visible"){ if(audioCtx) ensureAudio(); tickRest(); }
     updateWake();
     if(document.visibilityState !== "visible" || !cfg) return;
     if(state.dateAuto && state.date !== todayISO()){
